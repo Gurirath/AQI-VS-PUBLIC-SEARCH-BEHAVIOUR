@@ -1,0 +1,9 @@
+City,Term,Pearson r,p-value,Significant,Peak Lag (weeks)
+Bangkok,air_quality,0.577,0.0,✓,-1
+Bangkok,air_purifier,0.522,0.0,✓,-1
+Bangkok,N95_mask,0.233,0.0038,✓,-1
+Krakow,air_quality,0.352,0.0,✓,-1
+Krakow,air_purifier,0.5,0.0,✓,-1
+Melbourne,air_quality,0.134,0.1823,✗,-1
+Melbourne,air_purifier,-0.119,0.2379,✗,-7
+Melbourne,N95_mask,-0.001,0.9928,✗,-8
