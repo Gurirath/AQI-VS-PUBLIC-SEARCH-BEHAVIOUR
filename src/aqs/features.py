@@ -1,6 +1,7 @@
 """Loading and derived series shared by the notebooks and the dashboard."""
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import PCA
 from statsmodels.tsa.seasonal import STL
 
 from .config import BASELINE_TERMS, HEADLINE_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE, PROCESSED, INTERIM
@@ -90,3 +91,25 @@ def lag_correlation(d, max_lag=8):
 
 def rolling_correlation(d, window=26, min_periods=20):
     return d["pm25_mean"].rolling(window, min_periods=min_periods).corr(d["search"])
+
+
+def attention_index(long, city):
+    """First principal component of a city's dense search series, oriented so
+    higher = more searching. Returns (PM2.5 + index on dense weeks, variance shares)."""
+    wide = dense_wide(long, city)
+    X = wide.drop(columns="PM2.5")
+    Z = (X - X.mean()) / X.std()
+    pca = PCA().fit(Z)
+    pc1 = pca.transform(Z)[:, 0]
+    if np.corrcoef(pc1, Z.mean(axis=1))[0, 1] < 0:
+        pc1 = -pc1
+    idx = pd.DataFrame({"pm25_mean": wide["PM2.5"], "attention": pc1}, index=wide.index)
+    return idx, pca.explained_variance_ratio_
+
+
+def attention_pair(long, city):
+    """PM2.5 and the standardised attention index on a regular weekly index,
+    in the same shape as pair() so the two are interchangeable."""
+    idx, _ = attention_index(long, city)
+    idx["search"] = (idx["attention"] - idx["attention"].mean()) / idx["attention"].std()
+    return idx[["pm25_mean", "search"]].asfreq(WEEK)

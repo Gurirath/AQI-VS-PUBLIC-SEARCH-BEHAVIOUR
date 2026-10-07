@@ -12,11 +12,12 @@ import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 from scipy import stats
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from statsmodels.tsa.stattools import acf
 
+from . import awareness as A
 from . import features as F
+from . import stats as S
 from .config import CITIES, FIGURES, WHO_24H_GUIDELINE
 
 SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
@@ -431,23 +432,11 @@ def correlation_heatmaps(long):
     return fig
 
 
-def attention_index(long, city):
-    """First principal component of a city's dense search series, oriented so higher = more searching."""
-    wide = F.dense_wide(long, city)
-    X = wide.drop(columns="PM2.5")
-    Z = (X - X.mean()) / X.std()
-    pca = PCA().fit(Z)
-    pc1 = pca.transform(Z)[:, 0]
-    if np.corrcoef(pc1, Z.mean(axis=1))[0, 1] < 0:
-        pc1 = -pc1
-    return pd.DataFrame({"pm25_mean": wide["PM2.5"], "attention": pc1}, index=wide.index), pca.explained_variance_ratio_
-
-
 def pca_summary(long):
     """Variance explained by each component, and PC1 against PM2.5."""
     fig, axes = _city_axes(nrows=2, height=2.9)
     for j, city in enumerate(CITIES):
-        idx, ratio = attention_index(long, city)
+        idx, ratio = F.attention_index(long, city)
         ax = axes[0][j]
         ax.bar(range(1, len(ratio) + 1), ratio * 100, width=0.6, color=CITY_COLOR[city])
         ax.set_xticks(range(1, len(ratio) + 1), [f"PC{k}" for k in range(1, len(ratio) + 1)])
@@ -471,7 +460,7 @@ def regimes(long, k=3):
     markers = ["o", "s", "^"]
     out = {}
     for ax, city in zip(axes[0], CITIES):
-        idx, _ = attention_index(long, city)
+        idx, _ = F.attention_index(long, city)
         Z = (idx - idx.mean()) / idx.std()
         labels = KMeans(n_clusters=k, n_init=20, random_state=0).fit_predict(Z)
         order = np.argsort([Z["pm25_mean"][labels == c].mean() for c in range(k)])
@@ -492,3 +481,224 @@ def regimes(long, k=3):
            "K-means with three clusters per city. The legend gives each cluster's size and its average position, in standard deviations.",
            "eda_regimes")
     return fig, out
+
+
+# ------------------------------------------------------- corrected statistics
+
+def raw_vs_deseasonalized(table):
+    """Correlation before and after the shared season is removed, with bootstrap intervals."""
+    fig, axes = _city_axes(height=3.6, sharex=True)
+    for ax, city in zip(axes[0], CITIES):
+        d = table[table["city"] == city].sort_values("deseason_r")
+        y = np.arange(len(d))
+        ax.hlines(y, d["ci_low"], d["ci_high"], color=CITY_COLOR[city], linewidth=2, alpha=0.45)
+        ax.scatter(d["raw_r"], y, s=46, facecolor=SURFACE, edgecolor=INK2, linewidth=1.6, zorder=3)
+        ax.scatter(d["deseason_r"], y, s=52, color=CITY_COLOR[city], zorder=4)
+        ax.set_yticks(y, d["series"])
+        ax.axvline(0, color=INK, linewidth=1)
+        ax.set_xlim(-0.3, 1)
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("correlation with PM2.5")
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+    proxies = [mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, markerfacecolor=SURFACE,
+                                markeredgecolor=INK2, markeredgewidth=1.6, label="raw"),
+               mpl.lines.Line2D([], [], marker="o", linestyle="-", markersize=7, color=INK2,
+                                label="season removed, with 95% interval")]
+    fig.legend(handles=proxies, loc="upper right", ncols=2)
+    return finish(fig, "Removing the shared season shrinks the correlation but does not erase it",
+                  "Hollow = raw. Filled = after a seasonal fit is subtracted from both series; bar = block-bootstrap 95% interval.",
+                  "stats_raw_vs_deseasonalized")
+
+
+def deseasonalized_lags(long, max_lag=8):
+    """Lead/lag profile of the attention index once the season is removed."""
+    fig, ax = plt.subplots(figsize=(8.5, 4))
+    for city in CITIES:
+        cc = F.lag_correlation(S.deseasonalize(F.attention_pair(long, city)), max_lag)
+        ax.plot(cc.index, cc, color=CITY_COLOR[city], marker="o", markersize=4.5, label=CITY_NAME[city])
+    ax.axvline(0, color=INK, linewidth=1)
+    ax.axhline(0, color=AXIS, linewidth=1)
+    ax.set_xlabel("← search first      lag (weeks)      search after →")
+    ax.set_ylabel("correlation of seasonal residuals")
+    ax.legend(loc="upper right")
+    return finish(fig, "With the season removed, the response is a sharp same-week peak",
+                  "Attention index against PM2.5, both as residuals from a seasonal fit.",
+                  "stats_deseasonalized_lags")
+
+
+# -------------------------------------------------------------- awareness gap
+
+def level_vs_surprise_plot(long):
+    """Effect of expected (seasonal) and unexpected pollution on attention."""
+    fig, axes = _city_axes(height=2.4)
+    for ax, city in zip(axes[0], CITIES):
+        res = A.level_vs_surprise(F.attention_pair(long, city))
+        for y, (name, face) in enumerate([("expected", SURFACE), ("surprise", CITY_COLOR[city])]):
+            r = res.loc[name]
+            ax.hlines(y, r["low"], r["high"], color=CITY_COLOR[city], linewidth=2, alpha=0.5)
+            ax.scatter(r["effect"], y, s=60, facecolor=face, edgecolor=CITY_COLOR[city], linewidth=2, zorder=3)
+        ax.axvline(0, color=INK, linewidth=1)
+        ax.set_yticks([0, 1], ["seasonal pollution", "unexpected pollution"])
+        ax.set_ylim(-0.6, 1.6)
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("attention (SD) per 10 µg/m³")
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+    return finish(fig, "In Bangkok and Kraków attention responds to pollution the calendar did not predict",
+                  "Regression of the attention index on both components at once. Bars are 95% intervals robust to autocorrelation.",
+                  "gap_level_vs_surprise")
+
+
+def dose_response(long):
+    """Attention against pollution level, with the fitted switch-on point."""
+    fig, axes = _city_axes(height=3.6)
+    for ax, city in zip(axes[0], CITIES):
+        d = F.attention_pair(long, city).dropna()
+        th = A.attention_threshold(d)
+        ax.scatter(d["pm25_mean"], d["search"], s=14, color=CITY_COLOR[city], alpha=0.3, edgecolor="none")
+        bins = pd.qcut(d["pm25_mean"], 8)
+        med = d.groupby(bins, observed=True).median()
+        ax.plot(med["pm25_mean"], med["search"], color=CITY_COLOR[city], marker="o", markersize=6, linewidth=0, zorder=4)
+        x = np.linspace(d["pm25_mean"].min(), d["pm25_mean"].max(), 100)
+        ax.plot(x, th["base"] + th["slope_per_10"] / 10 * np.clip(x - th["threshold"], 0, None), color=INK, linewidth=2)
+        ax.axvspan(th["low"], th["high"], color=EMPTY, zorder=0)
+        ax.axvline(th["threshold"], color=INK2, linewidth=1)
+        ax.set_ylim(d["search"].quantile(0.005) - 0.3, d["search"].quantile(0.97) + 0.5)
+        verdict = "better than" if th["aic_gain_vs_linear"] > 2 else "no better than"
+        _note(ax, f"best switch-on {th['threshold']:.0f} µg/m³ (95% {th['low']:.0f}–{th['high']:.0f})\n{verdict} a straight line", "upper left")
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("weekly PM2.5 (µg/m³)")
+        ax.set_ylabel("attention index (SD)")
+    return finish(fig, "Attention rises with pollution, but without a sharp switch-on level",
+                  "Large dots: median attention in eight equal-sized pollution bands. Black: fitted flat-then-rising line. "
+                  "Grey band: uncertainty in the switch-on point.",
+                  "gap_dose_response")
+
+
+def episode_curves(long):
+    """Average pollution spike and the attention response around it."""
+    fig, axes = _city_axes(nrows=2, height=2.7, sharex=True)
+    for j, city in enumerate(CITIES):
+        res = A.episode_response(F.attention_pair(long, city))
+        for i, (col, color, label) in enumerate([("pm25_mean", PM_COLOR, "PM2.5 change (µg/m³)"),
+                                                 ("search", CITY_COLOR[city], "attention change (SD)")]):
+            ax, c = axes[i][j], res[col]
+            ax.fill_between(c.index, c["low"], c["high"], color=color, alpha=0.18, linewidth=0)
+            ax.plot(c.index, c["mean"], color=color, marker="o", markersize=4)
+            ax.axhline(0, color=AXIS, linewidth=1)
+            ax.axvline(0, color=INK, linewidth=1)
+            ax.set_ylabel(label)
+            if i == 0:
+                ax.set_title(f"{CITY_NAME[city]} — {res['summary']['episodes']} episodes")
+            else:
+                ax.set_xlabel("weeks from the start of the spike")
+    return finish(fig, "What happens to attention when pollution spikes",
+                  "Average across pollution episodes, relative to the four weeks before. Bands are 95% bootstrap intervals.",
+                  "gap_episode_curves")
+
+
+def hysteresis(long):
+    """The path each pollution season traces through pollution-attention space."""
+    fig, axes = _city_axes(height=3.9)
+    for ax, city in zip(axes[0], CITIES):
+        df = A.with_season(F.attention_pair(long, city), city)
+        seasons = [s for s, g in df.groupby("season") if g["search"].notna().sum() >= 30]
+        for k, season in enumerate(seasons):
+            g = df[df["season"] == season][["pm25_mean", "search"]].rolling(5, min_periods=3, center=True).mean().dropna()
+            alpha = 0.35 + 0.65 * k / max(len(seasons) - 1, 1)
+            ax.plot(g["pm25_mean"], g["search"], color=CITY_COLOR[city], alpha=alpha, linewidth=1.8)
+            for a in range(6, len(g) - 1, 8):   # direction of travel
+                ax.annotate("", xy=g.iloc[a + 1], xytext=g.iloc[a],
+                            arrowprops=dict(arrowstyle="-|>", color=CITY_COLOR[city], alpha=alpha, lw=1.2))
+            ax.scatter(g["pm25_mean"].iloc[0], g["search"].iloc[0], s=40, facecolor=SURFACE,
+                       edgecolor=CITY_COLOR[city], linewidth=1.6, zorder=3)
+            ax.scatter(g["pm25_mean"].iloc[-1], g["search"].iloc[-1], s=40, color=CITY_COLOR[city], marker="s", zorder=3)
+            peak = g["pm25_mean"].idxmax()
+            ax.annotate(f"{season}–{str(season + 1)[2:]}" if A.SEASON_START[city] > 1 else str(season),
+                        (g.loc[peak, "pm25_mean"], g.loc[peak, "search"]), textcoords="offset points",
+                        xytext=(5, 5), fontsize=8.5, color=INK)
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("PM2.5 (µg/m³, 5-week average)")
+        ax.set_ylabel("attention index (SD, 5-week average)")
+    proxies = [mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, markerfacecolor=SURFACE,
+                                markeredgecolor=INK2, markeredgewidth=1.6, label="season starts"),
+               mpl.lines.Line2D([], [], marker="s", linestyle="", markersize=7, color=INK2, label="season ends")]
+    fig.legend(handles=proxies, loc="upper right", ncols=2)
+    return finish(fig, "How attention moves through a pollution season",
+                  "One path per pollution year with at least 30 weeks of data; arrows show the direction of time. "
+                  "If attention depended only on the pollution level, the way up and the way down would coincide.",
+                  "gap_hysteresis")
+
+
+def silent_strips(long):
+    """Every week classified: ordinary, polluted and noticed, or polluted and silent."""
+    fig, axes = plt.subplots(3, 1, figsize=(12, 3.3), sharex=True)
+    for ax, city in zip(axes, CITIES):
+        df, summ = A.silent_weeks(F.attention_pair(long, city), city)
+        weeks = pd.date_range(df.index.min(), df.index.max(), freq=F.WEEK)
+        state = pd.Series(0.0, index=weeks)                      # no data
+        state[df.index] = 1                                       # ordinary week
+        state[df.index[df["high"] & ~df["silent"]]] = 2           # polluted, noticed
+        state[df.index[df["silent"]]] = 3                         # polluted, silent
+        cmap = mpl.colors.ListedColormap([SURFACE, EMPTY, CITY_COLOR[city], INK])
+        ax.pcolormesh(weeks, [0, 1], state.to_numpy()[None, :-1], cmap=cmap, vmin=0, vmax=3,
+                      edgecolors=SURFACE, linewidth=0.4)
+        ax.set_yticks([])
+        ax.grid(False)
+        ax.set_ylabel(CITY_NAME[city], rotation=0, ha="right", va="center", color=INK)
+        ax.text(1.01, 0.5, f"{summ['silent_weeks']} of {summ['high_weeks']} polluted weeks silent",
+                transform=ax.transAxes, va="center", fontsize=9, color=INK2)
+    proxies = [mpl.patches.Patch(facecolor=EMPTY, label="ordinary week"),
+               mpl.patches.Patch(facecolor=INK2, label="polluted and noticed (city colour)"),
+               mpl.patches.Patch(facecolor=INK, label="polluted and silent"),
+               mpl.patches.Patch(facecolor=SURFACE, edgecolor=AXIS, label="no data")]
+    fig.legend(handles=proxies, loc="lower center", ncols=4, bbox_to_anchor=(0.45, -0.12))
+    fig.suptitle("Silent pollution weeks", x=0.01, y=1.0, ha="left", va="top", fontsize=13, fontweight="bold")
+    fig.text(0.01, 0.9, "Polluted = top third of the city's own PM2.5. Silent = attention below the city's own median that week.",
+             ha="left", va="top", fontsize=9.5, color=INK2)
+    fig.subplots_adjust(top=0.78)
+    fig.savefig(FIGURES / "gap_silent_strips.png")
+    return fig
+
+
+# ------------------------------------------------------ causality & prediction
+
+def forecast_skill_plot(skill):
+    """Out-of-sample R² with and without PM2.5 among the predictors."""
+    fig, ax = plt.subplots(figsize=(8, 3.8))
+    x = np.arange(len(CITIES))
+    for i, city in enumerate(CITIES):
+        base, full = skill.loc[city, "r2_calendar"], skill.loc[city, "r2_calendar_pm25"]
+        ax.bar(i - 0.19, base, width=0.34, color=AXIS)
+        ax.bar(i + 0.19, full, width=0.34, color=CITY_COLOR[city])
+        for dx, v in [(-0.19, base), (0.19, full)]:
+            ax.text(i + dx, v + (0.02 if v >= 0 else -0.02), f"{v:.2f}", ha="center",
+                    va="bottom" if v >= 0 else "top", fontsize=9, color=INK)
+    ax.axhline(0, color=INK2, linewidth=1)
+    ax.set_xticks(x, [CITY_NAME[c] for c in CITIES])
+    ax.set_ylabel("out-of-sample R²")
+    ax.set_ylim(min(-0.45, ax.get_ylim()[0]), 0.6)
+    ax.grid(axis="x", visible=False)
+    proxies = [mpl.patches.Patch(facecolor=AXIS, label="calendar only"),
+               mpl.patches.Patch(facecolor=INK2, label="calendar + PM2.5 (city colour)")]
+    ax.legend(handles=proxies, loc="upper right")
+    return finish(fig, "What PM2.5 adds to a forecast of attention",
+                  "Random forest, each week predicted from a model trained only on earlier weeks. Below zero = worse than guessing the average.",
+                  "causal_forecast_skill")
+
+
+def forecast_timeline(preds):
+    """Held-out predictions against what happened."""
+    fig, axes = plt.subplots(3, 1, figsize=(12, 6.4), sharex=True)
+    for ax, city in zip(axes, CITIES):
+        pred = preds[(city, "calendar_pm25")].asfreq(F.WEEK)
+        actual = preds[(city, "actual")].reindex(pred.index)
+        ax.plot(actual.index, actual, color=PM_COLOR, linewidth=1.4, label="actual attention")
+        ax.plot(pred.index, pred, color=CITY_COLOR[city], linewidth=2, label="predicted from calendar + PM2.5")
+        ax.set_ylabel("attention (SD)")
+        ax.set_title(CITY_NAME[city])
+        ax.legend(loc="upper left", ncols=2, fontsize=8.5)
+    return finish(fig, "Predicted against actual attention on weeks the model had not seen",
+                  "Grey = what happened. Colour = forecast made using only earlier weeks.",
+                  "causal_forecast_timeline")
