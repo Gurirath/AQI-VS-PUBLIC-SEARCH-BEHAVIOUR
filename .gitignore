@@ -2,3 +2,7 @@
 data/raw/
 __pycache__/
 .ipynb_checkpoints/
+# reference docs (not part of the deliverable)
+PRD.md
+REPORT.md
+.venv/
