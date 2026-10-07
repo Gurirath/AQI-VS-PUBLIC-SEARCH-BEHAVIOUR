@@ -30,19 +30,33 @@ BASELINE_TERMS = {"air_quality": "air quality", "air_purifier": "air purifier", 
 # awareness (looking up the problem) vs. protection (acting on it).
 LOCAL_TERMS = {
     "bangkok": [
-        {"key": "pm25_th", "keyword": "PM2.5", "role": "awareness"},
-        {"key": "dust_th", "keyword": "ฝุ่น", "role": "awareness"},
-        {"key": "air_quality_th", "keyword": "คุณภาพอากาศ", "role": "awareness"},
-        {"key": "air_purifier_th", "keyword": "เครื่องฟอกอากาศ", "role": "protection"},
-        {"key": "mask_th", "keyword": "หน้ากาก N95", "role": "protection"},
+        {"key": "pm25_th", "label": "PM2.5 (Thai usage)", "keyword": "PM2.5", "role": "awareness"},
+        {"key": "dust_th", "label": "dust (Thai)", "keyword": "ฝุ่น", "role": "awareness"},
+        {"key": "air_quality_th", "label": "air quality (Thai)", "keyword": "คุณภาพอากาศ", "role": "awareness"},
+        {"key": "air_purifier_th", "label": "air purifier (Thai)", "keyword": "เครื่องฟอกอากาศ", "role": "protection"},
+        {"key": "mask_th", "label": "N95 mask (Thai)", "keyword": "หน้ากาก N95", "role": "protection"},
     ],
     "krakow": [
-        {"key": "smog_pl", "keyword": "smog", "role": "awareness"},
-        {"key": "air_quality_pl", "keyword": "jakość powietrza", "role": "awareness"},
-        {"key": "air_purifier_pl", "keyword": "oczyszczacz powietrza", "role": "protection"},
-        {"key": "mask_pl", "keyword": "maska antysmogowa", "role": "protection"},
+        {"key": "smog_pl", "label": "smog (Polish)", "keyword": "smog", "role": "awareness"},
+        {"key": "air_quality_pl", "label": "air quality (Polish)", "keyword": "jakość powietrza", "role": "awareness"},
+        {"key": "air_purifier_pl", "label": "air purifier (Polish)", "keyword": "oczyszczacz powietrza", "role": "protection"},
+        {"key": "mask_pl", "label": "anti-smog mask (Polish)", "keyword": "maska antysmogowa", "role": "protection"},
     ],
     "melbourne": [
-        {"key": "p2_mask_au", "keyword": "P2 mask", "role": "protection"},
+        {"key": "p2_mask_au", "label": "P2 mask", "keyword": "P2 mask", "role": "protection"},
     ],
 }
+
+# One awareness and one protection series per city for headline figures: the
+# local-language term with the fewest zero weeks in each role (chosen on data
+# density, before looking at how well it tracks PM2.5).
+HEADLINE_TERMS = {
+    "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th"},
+    "krakow": {"awareness": "smog_pl", "protection": "air_purifier_pl"},
+    "melbourne": {"awareness": "air_quality", "protection": "air_purifier"},
+}
+
+# A series with more zero weeks than this is too sparse to treat as continuous.
+MAX_ZERO_SHARE = 0.5
+
+WHO_24H_GUIDELINE = 15  # µg/m³, WHO 2021 24-hour PM2.5 guideline
