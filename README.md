@@ -31,15 +31,41 @@ Both collectors skip files that already exist, so they can be re-run after a
 failure. Raw pulls land in `data/raw/` (not tracked); `aqs.cleaning` writes the
 tracked tables in `data/interim/` and `data/processed/`.
 
+## Running the analysis
+
+Notebooks 05–08 are the current analysis. Each runs top to bottom from the tracked data.
+
+| Notebook | What it does |
+|---|---|
+| `05_eda.ipynb` | Data quality, distributions, seasonality, correlation, PCA, clustering |
+| `06_statistics.ipynb` | Correlations with the season removed, bootstrap intervals, corrected p-values |
+| `07_awareness_gap.ipynb` | When attention responds, how fast, whether it wears out, and silent pollution weeks |
+| `08_causal_and_verdict.ipynb` | Granger tests in both directions, forecast skill, per-city verdict |
+
+Notebooks 01–04 are the first iteration and are kept for reference. They used
+misaligned weeks and are superseded by `src/aqs` and notebooks 05–08; 02 no
+longer runs against the current raw files.
+
+## Dashboard
+
+```bash
+.venv/bin/streamlit run app/streamlit_app.py
+```
+
+Four pages: overview and verdicts, an interactive city explorer (choose a search
+series, remove the season, shift the lag), the Awareness Gap, and data and
+methods. It reads only the tracked tables, so it needs no API key.
+
 ## Layout
 
 | Path | Contents |
 |---|---|
-| `src/aqs/` | collection, cleaning and shared configuration |
+| `src/aqs/` | `config`, collectors, `cleaning`, `features`, `stats`, `awareness`, `causal`, `plots` |
 | `notebooks/` | analysis notebooks |
+| `app/` | Streamlit dashboard |
 | `data/interim/` | weekly PM2.5, weekly search series, sensor selection log |
-| `data/processed/` | merged analysis tables |
-| `outputs/figures/` | saved figures |
+| `data/processed/` | merged tables, `results_summary.csv`, `awareness_scorecard.csv`, `verdicts.csv` |
+| `outputs/figures/` | saved figures (`eda_`, `stats_`, `gap_`, `causal_` prefixes are current) |
 
 ## Data conventions
 
