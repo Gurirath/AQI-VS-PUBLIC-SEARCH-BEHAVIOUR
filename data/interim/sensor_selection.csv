@@ -1,0 +1,213 @@
+city,location_id,location_name,sensor_id,is_monitor,provider,location_first,location_last,n_days,first_day,last_day,mean_percent_complete,valid_days,valid_share,decision
+bangkok,135,Prabadang Rehabiltation Center,5077838,True,Air4Thai,2022-10-04,2026-10-06,602,2022-10-05,2024-12-31,87.2,588,0.536,kept
+bangkok,418,Department of Disease Control,1316996,True,Air4Thai,2016-01-30,2022-02-11,42,2022-01-01,2022-02-11,87.5,39,0.036,under 50% of study days
+bangkok,701,Sukhothai Thammathirat Open University,1304255,True,Air4Thai,2016-01-30,2026-10-06,1049,2022-01-01,2024-12-31,89.9,1016,0.927,kept
+bangkok,906,Residence for Dept. of Mineral Resources,1304207,True,Air4Thai,2016-01-30,2026-10-06,1045,2022-01-01,2024-12-31,90.5,1013,0.924,kept
+bangkok,2167,Highway District,1304205,True,Air4Thai,2016-02-11,2026-10-06,1046,2022-01-01,2024-12-31,88.9,1014,0.925,kept
+bangkok,2326,Thai Meteorological Department,1304072,True,Air4Thai,2016-01-30,2026-10-06,1036,2022-01-01,2024-12-31,90.2,1007,0.919,kept
+bangkok,2352,Thonburi Power Sub-Station,5077771,True,Air4Thai,2022-10-04,2026-10-06,602,2022-10-05,2024-12-31,86.6,582,0.531,kept
+bangkok,2375,Bodindecha Sing Singhaseni School,1304120,True,Air4Thai,2016-01-30,2026-10-06,998,2022-01-01,2024-12-31,90.6,968,0.883,kept
+bangkok,5545,Chulalongkorn Hospital,1304222,True,Air4Thai,2016-08-18,2026-10-06,1011,2022-01-01,2024-12-31,89.0,983,0.897,kept
+bangkok,225568,"Bang Khen District Office, Bangkok",16312585,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225568,"Bang Khen District Office, Bangkok",1304254,True,Air4Thai,2021-04-29,2026-10-06,833,2022-01-01,2024-12-31,79.5,675,0.616,kept
+bangkok,225571,"Bang Khun Thian District Office, Bangkok",1304176,True,Air4Thai,2021-04-29,2026-10-06,874,2022-01-01,2024-12-31,78.1,704,0.642,kept
+bangkok,225571,"Bang Khun Thian District Office, Bangkok",16312586,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225572,Kasertsart University,1304409,True,Air4Thai,2021-04-29,2026-10-06,876,2022-01-01,2024-12-31,76.2,704,0.642,kept
+bangkok,225572,Kasertsart University,16312715,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225574,"Phra Kanong District Office,  Bangkok",1304286,True,Air4Thai,2021-04-29,2026-10-06,1009,2022-01-01,2024-12-31,75.9,808,0.737,kept
+bangkok,225574,"Phra Kanong District Office,  Bangkok",16312839,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225575,Bangkok Noi Train Police Station,1304403,True,Air4Thai,2021-04-29,2026-10-06,824,2022-01-01,2024-12-31,78.7,658,0.6,kept
+bangkok,225575,Bangkok Noi Train Police Station,16312589,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225577,"Bank of Ayuthaya Head Office Yan Nawa, Bangkok",16312593,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225577,"Bank of Ayuthaya Head Office Yan Nawa, Bangkok",1304381,True,Air4Thai,2021-04-29,2026-10-06,786,2022-01-01,2024-12-31,76.4,619,0.565,kept
+bangkok,225580,National Housing Authority Klongchan,16312782,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225580,National Housing Authority Klongchan,1304524,True,Air4Thai,2021-04-29,2026-10-06,968,2022-01-01,2024-12-31,83.0,892,0.814,kept
+bangkok,225582,"Khlong Toei District Office, Bangkok",1304071,True,Air4Thai,2021-04-29,2026-10-06,974,2022-01-01,2024-12-31,78.3,791,0.722,kept
+bangkok,225582,"Khlong Toei District Office, Bangkok",16312721,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225590,"Sai Mai District Office, Bangkok",1304153,True,Air4Thai,2021-04-29,2026-10-06,885,2022-01-01,2024-12-31,79.0,716,0.653,kept
+bangkok,225590,"Sai Mai District Office, Bangkok",16312881,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225591,"Ladphrao District Office, Bangkok",1304377,True,Air4Thai,2021-04-29,2026-10-06,987,2022-01-01,2024-12-31,81.3,829,0.756,kept
+bangkok,225591,"Ladphrao District Office, Bangkok",16312725,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225593,Big C Supercenter Bang Na,16312598,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225593,Big C Supercenter Bang Na,1304057,True,Air4Thai,2021-04-29,2026-10-06,982,2022-01-01,2024-12-31,81.9,824,0.752,kept
+bangkok,225595,Bang Bon 5 Market,16312580,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225595,Bang Bon 5 Market,1304064,True,Air4Thai,2021-04-29,2026-10-06,887,2022-01-01,2024-12-31,80.1,725,0.661,kept
+bangkok,225596,"Sathon District Office, Bangkok",16312889,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225596,"Sathon District Office, Bangkok",1304091,True,Air4Thai,2021-04-29,2026-10-06,805,2022-01-01,2024-12-31,75.1,636,0.58,kept
+bangkok,225599,Bangrak Lovely Plaza,16312592,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225599,Bangrak Lovely Plaza,1304306,True,Air4Thai,2021-04-29,2026-10-06,799,2022-01-01,2024-12-31,77.5,627,0.572,kept
+bangkok,225604,Seacon Square,16312891,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225604,Seacon Square,1304378,True,Air4Thai,2021-04-29,2026-10-06,813,2022-01-01,2024-12-31,76.3,642,0.586,kept
+bangkok,225610,"Bueng Kum District Office, Bangkok",16312602,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225610,"Bueng Kum District Office, Bangkok",1304211,True,Air4Thai,2021-04-29,2026-10-06,918,2022-01-01,2024-12-31,79.0,747,0.682,kept
+bangkok,225612,Bansomdejchaopraya Rajabhat University,1304328,True,Air4Thai,2021-04-29,2026-10-06,1045,2022-01-01,2024-12-31,89.4,1007,0.919,kept
+bangkok,225614,Tha phra Intersection,16312924,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225614,Tha phra Intersection,1305020,True,Air4Thai,2021-04-29,2026-10-06,888,2022-01-01,2024-12-31,80.1,732,0.668,kept
+bangkok,225617,"Suan Luang District Office, Bangkok",16312911,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225617,"Suan Luang District Office, Bangkok",1304343,True,Air4Thai,2021-04-29,2026-10-06,773,2022-01-01,2024-12-31,77.4,613,0.559,kept
+bangkok,225619,"Don Mueng District Office, Bangkok",1304237,True,Air4Thai,2021-04-29,2026-10-06,840,2022-01-01,2024-12-31,78.3,686,0.626,kept
+bangkok,225619,"Don Mueng District Office, Bangkok",16312666,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225621,Thon Buri Market Sanam Luang 2,1304323,True,Air4Thai,2021-04-29,2026-10-06,979,2022-01-01,2024-12-31,79.3,806,0.735,kept
+bangkok,225621,Thon Buri Market Sanam Luang 2,16312938,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225622,"Huai Khwang District Office, Bangkok",1304203,True,Air4Thai,2021-04-29,2026-10-06,1001,2022-01-01,2024-12-31,82.2,844,0.77,kept
+bangkok,225622,"Huai Khwang District Office, Bangkok",16312701,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225624,Odeon Circus,16312811,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225624,Odeon Circus,1304435,True,Air4Thai,2021-04-29,2026-10-06,901,2022-01-01,2024-12-31,77.4,727,0.663,kept
+bangkok,225629,Department of Disease Control,1304077,True,Air4Thai,2021-04-29,2026-10-06,1002,2022-02-11,2024-12-31,95.2,974,0.889,kept
+bangkok,225631,National Economic and Social Development Council Office,16312779,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225631,National Economic and Social Development Council Office,1304293,True,Air4Thai,2021-04-29,2026-10-06,983,2022-01-01,2024-12-31,81.8,824,0.752,kept
+bangkok,225632,"Chomthong District Office, Bangkok",1304130,True,Air4Thai,2021-04-29,2026-10-06,961,2022-01-01,2024-12-31,82.0,807,0.736,kept
+bangkok,225632,"Chomthong District Office, Bangkok",16312649,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225633,Siam University,1304192,True,Air4Thai,2021-04-29,2026-10-06,787,2022-01-01,2024-12-31,76.6,620,0.566,kept
+bangkok,225633,Siam University,16312893,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225634,"Rat Burana District Office,  Bangkok",1304054,True,Air4Thai,2021-04-29,2026-10-06,997,2022-01-01,2024-12-31,77.2,811,0.74,kept
+bangkok,225634,"Rat Burana District Office,  Bangkok",16312864,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225635,"Wang Thonglang District Office, Bangkok",1304123,True,Air4Thai,2021-04-29,2026-10-06,946,2022-01-01,2024-12-31,78.7,770,0.703,kept
+bangkok,225635,"Wang Thonglang District Office, Bangkok",16312945,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225637,South Bangkok Power Plant,1304404,True,Air4Thai,2021-04-29,2026-10-06,970,2022-01-01,2024-12-31,88.5,925,0.844,kept
+bangkok,225638,Samyan Mitrtown,1304216,True,Air4Thai,2021-04-29,2026-10-06,886,2022-01-01,2024-12-31,79.6,723,0.66,kept
+bangkok,225638,Samyan Mitrtown,16312886,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225640,Library under King Taksin Bridge,16312735,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225640,Library under King Taksin Bridge,1304353,True,Air4Thai,2021-04-29,2026-10-06,922,2022-01-01,2024-12-31,80.3,759,0.693,kept
+bangkok,225641,"Din Dang, Bangkok",1304357,True,Air4Thai,2021-04-29,2026-10-06,1001,2022-01-01,2024-12-31,75.9,796,0.726,kept
+bangkok,225641,"Din Dang, Bangkok",16312664,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225642,"Bang Phlat District Office, Bangkok",16312587,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225642,"Bang Phlat District Office, Bangkok",1304146,True,Air4Thai,2021-04-29,2026-10-06,936,2022-01-01,2024-12-31,80.2,770,0.703,kept
+bangkok,225647,"Phra Nakhon District Office, Bangkok",1304340,True,Air4Thai,2021-04-29,2026-10-06,986,2022-01-01,2024-12-31,78.3,803,0.733,kept
+bangkok,225650,The Government Public Relations Department,1304152,True,Air4Thai,2021-04-29,2026-10-06,1049,2022-01-01,2024-12-31,90.5,1019,0.93,kept
+bangkok,225651,"Saphan Sung District Office, Bangkok",16312888,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225651,"Saphan Sung District Office, Bangkok",1304179,True,Air4Thai,2021-04-29,2026-10-06,1001,2022-01-01,2024-12-31,81.9,842,0.768,kept
+bangkok,225652,Public Park to commemorate the sixth anniversary of His Majesty the King,1304082,True,Air4Thai,2021-04-29,2026-05-21,843,2022-01-01,2024-12-31,75.4,664,0.606,kept
+bangkok,225652,Public Park to commemorate the sixth anniversary of His Majesty the King,16312859,True,Air4Thai,2021-04-29,2026-05-21,0,,,,0,0.0,under 50% of study days
+bangkok,225653,Chokchai Police Station,1304128,True,Air4Thai,2021-04-29,2026-10-06,993,2022-01-01,2024-12-31,88.8,960,0.876,kept
+bangkok,225656,"Bang Sue District Office, Bangkok",1304256,True,Air4Thai,2021-04-29,2026-10-06,982,2022-01-01,2024-12-31,81.7,819,0.747,kept
+bangkok,225656,"Bang Sue District Office, Bangkok",16312588,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225667,Mahaisawan Intersection,16312742,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225667,Mahaisawan Intersection,1304114,True,Air4Thai,2021-04-29,2026-10-06,974,2022-01-01,2024-12-31,73.7,720,0.657,kept
+bangkok,225668,"Bang Kapi District Office, Bangkok",16312581,True,Air4Thai,2021-04-29,2026-09-26,0,,,,0,0.0,under 50% of study days
+bangkok,225668,"Bang Kapi District Office, Bangkok",1304426,True,Air4Thai,2021-04-29,2026-09-26,927,2022-01-01,2024-12-31,77.8,757,0.691,kept
+bangkok,225671,"Khlong Sam Wa District Office, Bangkok",16312720,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225671,"Khlong Sam Wa District Office, Bangkok",1304229,True,Air4Thai,2021-04-29,2026-10-06,899,2022-01-01,2024-12-31,78.7,724,0.661,kept
+bangkok,225672,Suan Sayam-Ram Intra Intersection,1304078,True,Air4Thai,2021-04-29,2026-10-06,839,2022-01-01,2024-12-31,78.5,683,0.623,kept
+bangkok,225672,Suan Sayam-Ram Intra Intersection,16312914,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225673,National Housing Authority Dindaeng,16312781,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225673,National Housing Authority Dindaeng,1304204,True,Air4Thai,2021-04-29,2026-10-06,1046,2022-01-01,2024-12-31,89.6,1018,0.929,kept
+bangkok,225677,"Lak Si District Office, Bangkok",1304185,True,Air4Thai,2021-04-29,2026-10-06,990,2022-01-01,2024-12-31,82.0,834,0.761,kept
+bangkok,225677,"Lak Si District Office, Bangkok",16312727,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225678,"Bang Khae District Office, Bangkok",1304073,True,Air4Thai,2021-04-29,2026-10-06,965,2022-01-01,2024-12-31,80.4,801,0.731,kept
+bangkok,225678,"Bang Khae District Office, Bangkok",16312583,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225679,"Dusit District Office, Bangkok",16312668,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225679,"Dusit District Office, Bangkok",1304309,True,Air4Thai,2021-04-29,2026-10-06,911,2022-01-01,2024-12-31,81.2,759,0.693,kept
+bangkok,225680,Sri Nakhon Khuean Khan Park,1304363,True,Air4Thai,2021-04-29,2022-06-01,146,2022-01-01,2022-06-01,88.4,136,0.124,under 50% of study days
+bangkok,225681,"Soi Sukhumwit 63 Roadside Wattana, Bangkok",16312902,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225681,"Soi Sukhumwit 63 Roadside Wattana, Bangkok",1304248,True,Air4Thai,2021-04-29,2026-10-06,943,2022-01-01,2024-12-31,81.0,783,0.714,kept
+bangkok,225682,King Mongkut's University of Technology Thonburi,1304111,True,Air4Thai,2021-04-29,2026-10-06,970,2022-01-01,2024-12-31,81.2,808,0.737,kept
+bangkok,225682,King Mongkut's University of Technology Thonburi,16312723,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225684,Army Apartment Sam Sen,1304399,True,Air4Thai,2021-04-29,2026-10-06,887,2022-01-01,2024-12-31,79.4,722,0.659,kept
+bangkok,225684,Army Apartment Sam Sen,16312575,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225685,National Housing  Huaykwang,1304097,True,Air4Thai,2021-04-29,2025-04-25,1000,2022-01-01,2024-12-31,87.5,947,0.864,kept
+bangkok,225686,Highway NO.3902 km.13 +600,1304349,True,Air4Thai,2021-04-29,2026-10-02,1039,2022-01-01,2024-12-31,67.7,737,0.672,kept
+bangkok,225686,Highway NO.3902 km.13 +600,16312694,True,Air4Thai,2021-04-29,2026-10-02,0,,,,0,0.0,under 50% of study days
+bangkok,225688,"Ratchathewi District Office, Bangkok",16312866,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225688,"Ratchathewi District Office, Bangkok",1304305,True,Air4Thai,2021-04-29,2026-10-06,808,2022-01-01,2024-12-31,69.7,591,0.539,kept
+bangkok,225689,Phutthamonthon 1 - Borommaratchachonnani Intersection,16312843,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,225689,Phutthamonthon 1 - Borommaratchachonnani Intersection,1304065,True,Air4Thai,2021-04-29,2026-10-06,892,2022-01-01,2024-12-31,80.6,732,0.668,kept
+bangkok,225691,"Ma Charean Roadside, Petcha Kasem 8, Nong Khaem",1304326,True,Air4Thai,2021-04-29,2026-10-06,869,2022-01-01,2024-12-31,76.4,690,0.63,kept
+bangkok,225691,"Ma Charean Roadside, Petcha Kasem 8, Nong Khaem",16312738,True,Air4Thai,2021-04-29,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,229190,Grand Monaco Village,1320292,True,AirNow,2021-07-08,2024-10-31,336,2023-11-10,2024-10-31,75.1,305,0.278,under 50% of study days
+bangkok,368390,Thawee Wanarom Park,16312931,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368390,Thawee Wanarom Park,2076218,True,Air4Thai,2022-10-25,2026-10-06,531,2022-10-25,2024-12-31,71.0,389,0.355,under 50% of study days
+bangkok,368391,Suan Luang Rama IX,2076229,True,Air4Thai,2022-10-25,2026-10-06,550,2022-10-25,2024-12-31,72.9,411,0.375,under 50% of study days
+bangkok,368391,Suan Luang Rama IX,16312912,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368392,Ramintra Sports Park,16312862,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368392,Ramintra Sports Park,2076223,True,Air4Thai,2022-10-25,2026-10-06,653,2022-10-25,2024-12-31,75.8,507,0.463,under 50% of study days
+bangkok,368393,Rommani Thungsikan Park,2076221,True,Air4Thai,2022-10-25,2026-10-06,560,2022-10-25,2024-12-31,71.0,409,0.373,under 50% of study days
+bangkok,368393,Rommani Thungsikan Park,16312874,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368394,Lumpini park,16312736,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368394,Lumpini park,2076227,True,Air4Thai,2022-10-25,2026-10-06,541,2022-10-25,2024-12-31,71.4,396,0.361,under 50% of study days
+bangkok,368395,Thonburirom Park,16312940,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368395,Thonburirom Park,2076215,True,Air4Thai,2022-10-25,2026-10-06,614,2022-10-25,2024-12-31,73.5,468,0.427,under 50% of study days
+bangkok,368396,Queen Sirikit Park,16312860,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368396,Queen Sirikit Park,2076225,True,Air4Thai,2022-10-25,2026-10-06,628,2022-10-25,2024-12-31,70.2,474,0.432,under 50% of study days
+bangkok,368397,Rama VIII Park,2076216,True,Air4Thai,2022-10-25,2026-10-06,391,2022-10-25,2024-12-31,74.1,286,0.261,under 50% of study days
+bangkok,368397,Rama VIII Park,16312861,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368398,Santiphap Park,2076230,True,Air4Thai,2022-10-25,2023-01-22,86,2022-10-25,2023-01-22,92.3,81,0.074,under 50% of study days
+bangkok,368399,Benjakitti Park,16312596,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368399,Benjakitti Park,2076232,True,Air4Thai,2022-10-25,2026-10-06,589,2022-10-25,2024-12-31,70.3,428,0.391,under 50% of study days
+bangkok,368400,"Bang Kho Laem District Office, Bangkok (Mobile)",2076219,True,Air4Thai,2022-10-25,2025-03-19,677,2022-10-25,2024-12-31,75.9,530,0.484,under 50% of study days
+bangkok,368402,Serithai Park,2076231,True,Air4Thai,2022-10-25,2026-10-06,616,2022-10-25,2024-12-31,75.0,473,0.432,under 50% of study days
+bangkok,368402,Serithai Park,16312892,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368403,Chatuchak Park,2076226,True,Air4Thai,2022-10-25,2026-10-06,626,2022-10-25,2024-12-31,73.2,480,0.438,under 50% of study days
+bangkok,368403,Chatuchak Park,16312642,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368404,"60th Anniversary of Queen Sirikit Park ,Kheha Romklao Road, Lat Krabang, Bangkok",16312566,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368404,"60th Anniversary of Queen Sirikit Park ,Kheha Romklao Road, Lat Krabang, Bangkok",2076214,True,Air4Thai,2022-10-25,2026-10-06,673,2022-10-25,2024-12-31,75.0,519,0.474,under 50% of study days
+bangkok,368405,Bang Khae Phirom Park,2076222,True,Air4Thai,2022-10-25,2026-10-06,571,2022-10-25,2024-12-31,68.9,406,0.37,under 50% of study days
+bangkok,368405,Bang Khae Phirom Park,16312584,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368406,80th Anniversary Commemoration Park,16312569,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368406,80th Anniversary Commemoration Park,2076224,True,Air4Thai,2022-10-25,2026-10-06,670,2022-10-25,2024-12-31,76.4,524,0.478,under 50% of study days
+bangkok,368407,Wacchirabenchatat Park,16312944,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368407,Wacchirabenchatat Park,2076220,True,Air4Thai,2022-10-25,2026-10-06,202,2022-10-25,2024-02-14,78.2,164,0.15,under 50% of study days
+bangkok,368485,Benchasiri Park,16312595,True,Air4Thai,2022-10-25,2026-10-06,0,,,,0,0.0,under 50% of study days
+bangkok,368485,Benchasiri Park,2076618,True,Air4Thai,2022-10-25,2026-10-06,600,2022-10-25,2024-12-31,74.0,455,0.415,under 50% of study days
+bangkok,418809,National Housing Authority Klongchan,2332866,True,Air4Thai,2022-08-16,2026-01-26,15,2022-08-16,2024-11-18,79.9,13,0.012,under 50% of study days
+bangkok,418810,"Southeast Asia University, Bangkok (Mobile)",2332865,True,Air4Thai,2022-09-04,2022-09-04,1,2022-09-05,2022-09-05,4.0,0,0.0,under 50% of study days
+bangkok,921162,Suan Sayam-Ram Intra Intersection,5079767,True,Air4Thai,2022-10-04,2022-10-04,1,2022-10-05,2022-10-05,4.0,0,0.0,under 50% of study days
+bangkok,1235990,"Kasetsart university laboratory school 1, Chatuchak, Bangkok",6530181,False,AirGradient,2023-07-15,2026-10-06,229,2023-07-15,2024-12-31,87.0,220,0.201,not a reference-grade monitor
+bangkok,1236034,"Watkhemapirataram school 1, Mueang, Nonthaburi",6530253,False,AirGradient,2023-07-15,2026-10-06,524,2023-07-15,2024-12-22,90.9,515,0.47,not a reference-grade monitor
+bangkok,1236038,"Nuannoradit school 2, Phasi Charoen, Bangkok",6530250,False,AirGradient,2023-07-15,2025-07-31,488,2023-07-15,2024-12-27,89.8,476,0.434,not a reference-grade monitor
+bangkok,1236053,"Suwannaramwittayakom school 1, Bangkok Noi, Bangkok",6530291,False,AirGradient,2023-07-15,2026-10-06,534,2023-07-15,2024-12-31,92.2,530,0.484,not a reference-grade monitor
+bangkok,1236074,"Mahapruttaram girl's school 2, Bang Rak, Bangkok",6530344,False,AirGradient,2023-07-15,2025-07-03,533,2023-07-15,2024-12-31,91.5,524,0.478,not a reference-grade monitor
+bangkok,1698943,Savvi Condominium Phahol-Ari,7186370,False,AirGradient,2023-10-13,2025-10-27,444,2023-10-13,2024-12-31,92.2,439,0.401,not a reference-grade monitor
+bangkok,1877127,Acoem Thailand,7447219,False,AirGradient,2023-11-24,2024-06-07,195,2023-11-24,2024-06-07,86.1,191,0.174,not a reference-grade monitor
+bangkok,1894642,Savvi Condominium Phahol-Ari,7466395,False,Clarity,2023-11-28,2026-08-31,398,2023-11-29,2024-12-31,90.7,390,0.356,not a reference-grade monitor
+bangkok,2088223,Government House,7684604,True,Air4Thai,2024-01-13,2024-01-13,1,2024-01-13,2024-01-13,13.0,0,0.0,under 50% of study days
+bangkok,2181641,ทองหล่อ 8,7790011,False,AirGradient,2024-02-01,2026-10-06,333,2024-02-01,2024-12-31,92.6,329,0.3,not a reference-grade monitor
+bangkok,2402491," Wat Khlong Toey Nai School, Bangkok",7834588,False,Clarity,2024-02-09,2026-08-31,326,2024-02-09,2024-12-31,88.5,318,0.29,not a reference-grade monitor
+bangkok,2473770,"Talingchan, Bangkok, Thailand",7919323,False,AirGradient,2024-02-25,2024-03-16,19,2024-02-25,2024-03-16,79.6,17,0.016,not a reference-grade monitor
+bangkok,2608457,"Talingchan, Bangkok, Thailand",8502834,False,AirGradient,2024-03-27,2024-03-29,3,2024-03-27,2024-03-29,37.3,1,0.001,not a reference-grade monitor
+bangkok,2674799,"Talingchan, Bangkok, Thailand",8655382,False,AirGradient,2024-03-29,2025-01-13,278,2024-03-29,2024-12-31,95.1,274,0.25,not a reference-grade monitor
+bangkok,2692433,Soi Rimthang Rotfai 3,8694745,False,AirGradient,2024-04-01,2026-10-06,275,2024-04-01,2024-12-31,95.1,272,0.248,not a reference-grade monitor
+bangkok,2692436,Soi Naradhiwas Rajanagarindra 17/1,8694741,False,AirGradient,2024-04-01,2026-10-06,274,2024-04-01,2024-12-31,94.4,271,0.247,not a reference-grade monitor
+bangkok,2692437,Nana Nue Pier,8694734,False,AirGradient,2024-04-01,2026-08-31,273,2024-04-01,2024-12-31,94.9,269,0.245,not a reference-grade monitor
+bangkok,2692438,Soi Wong Sawang 3,8694782,False,AirGradient,2024-04-01,2025-04-05,275,2024-04-01,2024-12-31,95.1,271,0.247,not a reference-grade monitor
+bangkok,2692439,Wanglang Rd.,8694736,False,AirGradient,2024-04-01,2025-12-21,275,2024-04-01,2024-12-31,95.2,272,0.248,not a reference-grade monitor
+bangkok,2692642,Suriya Thep Alley,8695097,False,AirGradient,2024-04-01,2026-10-06,257,2024-04-01,2024-12-31,94.6,254,0.232,not a reference-grade monitor
+bangkok,2692643,Tang Trong Chit Alley,8695100,False,AirGradient,2024-04-01,2026-10-06,186,2024-04-01,2024-10-29,87.0,177,0.161,not a reference-grade monitor
+bangkok,2692644,Kiak Kai Intersection,8695095,False,AirGradient,2024-04-01,2026-10-06,270,2024-04-01,2024-12-31,95.2,265,0.242,not a reference-grade monitor
+bangkok,2692645,Vibhavadi Rangsit 11 Alley Lane 10,8695103,False,AirGradient,2024-04-01,2026-10-06,262,2024-04-01,2024-12-31,92.6,257,0.234,not a reference-grade monitor
+bangkok,2694254,Soi Kheha Pattana 1,8698874,False,AirGradient,2024-04-02,2025-03-07,19,2024-04-02,2024-05-20,21.1,0,0.0,not a reference-grade monitor
+bangkok,2848810,International School Bangkok - Nonthaburi ,9235367,False,AirGradient,2024-05-16,2026-10-06,219,2024-05-16,2024-12-31,86.2,199,0.182,not a reference-grade monitor
+bangkok,3090636,Uno Solutions,10820628,False,AirGradient,2024-10-03,2026-10-06,90,2024-10-03,2024-12-31,98.6,90,0.082,not a reference-grade monitor
+bangkok,3097120,Circle Living Prototype,10865435,False,AirGradient,2024-10-07,2026-10-06,86,2024-10-07,2024-12-31,99.2,86,0.078,not a reference-grade monitor
+bangkok,3098869,NIST International School,10877205,False,AirGradient,2024-10-08,2024-11-11,35,2024-10-08,2024-11-11,95.3,34,0.031,not a reference-grade monitor
+bangkok,3332045,Soi Ramintra 62,11761946,False,AirGradient,2024-12-23,2026-07-28,9,2024-12-23,2024-12-31,93.6,8,0.007,not a reference-grade monitor
+krakow,7239,"Kraków, ul. Bujaka",20854,True,EEA,2018-11-21,2026-09-30,0,,,,0,0.0,under 50% of study days
+krakow,10516,"Kraków, ul. Bulwarowa",34918,True,EEA,2018-11-21,2026-09-30,1021,2022-01-01,2024-12-31,86.9,898,0.819,kept
+krakow,10752,"Kraków, Aleja Krasińskiego",35870,True,EEA,2018-11-21,2026-09-30,919,2022-01-01,2024-12-31,85.8,796,0.726,kept
+krakow,3239057,"Kraków, Petrażyckiego",11224372,False,AirGradient,2024-11-07,2026-10-06,55,2024-11-07,2024-12-31,98.2,54,0.049,not a reference-grade monitor
+krakow,3316517,"Radziszów, Jagodowa",11655703,False,AirGradient,2024-12-15,2025-03-27,17,2024-12-15,2024-12-31,94.6,16,0.015,not a reference-grade monitor
+melbourne,10491,Altona North,34800,True,Australia - Victoria,2020-10-21,2026-07-29,643,2022-01-01,2024-12-31,93.1,610,0.557,kept
+melbourne,10494,Alphington,34807,True,Australia - Victoria,2020-01-06,2026-07-29,668,2022-01-01,2024-12-31,93.5,637,0.581,kept
+melbourne,10584,Footscray,35792,True,Australia - Victoria,2020-01-06,2023-04-05,390,2022-01-01,2023-04-05,90.5,360,0.328,under 50% of study days
+melbourne,10719,Campbellfield,35712,True,Australia - Victoria,2020-02-13,2022-03-19,75,2022-01-01,2022-03-20,86.8,67,0.061,under 50% of study days
+melbourne,10753,Melbourne CBD,35872,True,Australia - Victoria,2020-01-06,2026-07-29,668,2022-01-01,2024-12-31,93.0,637,0.581,kept
+melbourne,10766,Point Cook,35938,True,Australia - Victoria,2020-02-28,2026-07-29,665,2022-01-01,2024-12-31,89.0,627,0.572,kept
+melbourne,10826,Brooklyn,36187,True,Australia - Victoria,2020-01-06,2026-07-29,677,2022-01-01,2024-12-31,90.3,648,0.591,kept
+melbourne,10832,Brighton,36214,True,Australia - Victoria,2020-01-06,2026-07-29,676,2022-01-01,2024-12-31,93.7,647,0.59,kept
+melbourne,10836,Box Hill,36239,True,Australia - Victoria,2020-01-06,2026-07-29,670,2022-01-01,2024-12-31,93.2,642,0.586,kept
+melbourne,10870,Macleod,36398,True,Australia - Victoria,2020-01-06,2026-07-29,623,2022-01-01,2024-12-31,87.2,549,0.501,kept
+melbourne,231009,St Albans,1330054,True,Australia - Victoria,2021-08-06,2023-04-05,354,2022-01-01,2023-04-05,88.5,315,0.287,under 50% of study days
+melbourne,231010,Kealba,1330055,True,Australia - Victoria,2021-08-06,2023-04-05,362,2022-01-01,2023-04-05,88.0,324,0.296,under 50% of study days
+melbourne,232404,Newport,1337549,True,Australia - Victoria,2021-08-17,2022-02-08,39,2022-01-01,2022-02-08,89.4,35,0.032,under 50% of study days
+melbourne,232405,Kingsville,1337550,True,Australia - Victoria,2021-08-17,2026-04-12,507,2022-01-01,2024-12-31,91.7,472,0.431,under 50% of study days
+melbourne,232406,Spotswood,1337552,True,Australia - Victoria,2021-08-17,2026-06-29,572,2022-01-01,2024-12-31,90.7,527,0.481,under 50% of study days
+melbourne,921130,Kingsville,5079706,True,Australia - Victoria,2022-10-04,2022-10-04,1,2022-10-05,2022-10-05,4.0,0,0.0,under 50% of study days
+melbourne,1236004,Mitcham ,6530202,False,AirGradient,2023-07-15,2026-10-06,473,2023-07-15,2024-10-30,90.2,462,0.422,not a reference-grade monitor
+melbourne,1285350,SPARTAN - Melbourne,6566250,True,SPARTAN Network,2022-08-09,2023-06-19,316,2022-08-09,2023-06-20,96.6,314,0.286,under 50% of study days
+melbourne,2746517,Footscray,8813440,True,Australia - Victoria,2024-04-11,2024-10-01,153,2024-04-12,2024-10-01,86.5,133,0.121,under 50% of study days
+melbourne,2878674,"Moonee Ponds (Mason Square, Top of Rise)",9458479,False,AirGradient,2024-06-04,2026-10-06,211,2024-06-04,2024-12-31,97.3,209,0.191,not a reference-grade monitor
+melbourne,3065344,"Westgarth, Melbourne, Australia",10629965,False,AirGradient,2024-09-16,2026-06-06,1,2024-09-16,2024-09-16,29.0,0,0.0,not a reference-grade monitor
+melbourne,3066656,Doncaster East,10639706,False,AirGradient,2024-09-17,2026-10-06,106,2024-09-17,2024-12-31,98.7,105,0.096,not a reference-grade monitor
+melbourne,3087372,Footscray,10796433,True,Australia - Victoria,2024-10-01,2024-10-01,1,2024-10-01,2024-10-01,4.0,0,0.0,under 50% of study days
+melbourne,3087373,Footscray,10796730,True,Australia - Victoria,2024-10-01,2026-07-29,85,2024-10-01,2024-12-31,93.1,79,0.072,under 50% of study days
+melbourne,3199135,Sunshine West,11118960,True,Australia - Victoria,2024-10-29,2024-10-31,3,2024-10-29,2024-10-31,60.0,2,0.002,under 50% of study days
