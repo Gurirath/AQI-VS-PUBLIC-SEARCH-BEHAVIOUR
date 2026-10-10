@@ -1,8 +1,3 @@
-"""Interactive dashboard for the Air Quality vs Search Behaviour project.
-
-Run:  streamlit run app/streamlit_app.py
-Reads only the tracked tables in data/, so it needs no API key.
-"""
 import sys
 from pathlib import Path
 
@@ -25,8 +20,6 @@ ATTENTION = "attention index (all terms combined)"
 
 st.set_page_config(page_title="Air quality vs search", page_icon="🌫️", layout="wide")
 
-
-# ----------------------------------------------------------------- data
 
 @st.cache_data
 def load():
@@ -66,8 +59,6 @@ def verdict_label(row):
         return "Not informative"
     return "Reliable proxy" if row["r2_gain_from_pm25"] > 0.05 else "Real, but mostly seasonal"
 
-
-# --------------------------------------------------------------- charts
 
 def style(fig, height=340, legend=False):
     fig.update_layout(
@@ -217,8 +208,6 @@ def zero_chart(city):
     fig.update_xaxes(title_text="% of weeks with zero search interest", range=[0, 100])
     return style(fig, 60 + 30 * len(d))
 
-
-# ---------------------------------------------------------------- pages
 
 def page_overview():
     st.title("Does bad air show up in what people search for?")

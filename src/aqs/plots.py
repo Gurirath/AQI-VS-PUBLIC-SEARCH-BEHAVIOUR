@@ -1,10 +1,3 @@
-"""Project plot theme and the EDA figures.
-
-Conventions used in every figure:
-  - colour identifies the city (Bangkok blue, Kraków orange, Melbourne green)
-  - PM2.5 is always drawn in grey ink, search in the city colour
-  - one y-axis per panel; two measures are compared as z-scores or in stacked panels
-"""
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -48,7 +41,6 @@ def use_theme():
 
 
 def finish(fig, title, subtitle=None, name=None):
-    """Figure-level title and subtitle, then save under outputs/figures."""
     h = fig.get_figheight()
     fig.suptitle(title, x=0.01, y=1 - 0.08 / h, ha="left", va="top", fontsize=13, fontweight="bold")
     if subtitle:
@@ -72,10 +64,7 @@ def _note(ax, text, loc="upper right"):
             bbox=dict(facecolor=SURFACE, edgecolor="none", alpha=0.85, pad=2))
 
 
-# ---------------------------------------------------------------- data quality
-
 def coverage_strips(pm25):
-    """Days of PM2.5 data behind each week, one strip per city."""
     weeks = pd.date_range(pm25["week"].min(), pm25["week"].max(), freq=F.WEEK)
     fig, axes = plt.subplots(3, 1, figsize=(12, 3.4), sharex=True)
     for ax, city in zip(axes, CITIES):
@@ -95,7 +84,6 @@ def coverage_strips(pm25):
 
 
 def zero_inflation(long):
-    """Share of zero weeks in every search series."""
     summ = F.series_summary(long)
     fig, axes = _city_axes(height=3.6, sharex=True)
     for ax, city in zip(axes[0], CITIES):
@@ -114,10 +102,7 @@ def zero_inflation(long):
                   "eda_zero_inflation")
 
 
-# ------------------------------------------------------------------ univariate
-
 def distributions(pm25):
-    """PM2.5 histograms, raw and log-scaled, with shape statistics."""
     fig, axes = _city_axes(nrows=2, height=2.8)
     for j, city in enumerate(CITIES):
         x = pm25.loc[pm25["city"] == city, "pm25_mean"]
@@ -142,9 +127,8 @@ def distributions(pm25):
 
 
 def ecdf(pm25):
-    """Cumulative distribution of weekly PM2.5, all cities on one log axis."""
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    label_at = {"bangkok": 60, "krakow": 25, "melbourne": 60}  # % level where each curve has clear space to its left
+    label_at = {"bangkok": 60, "krakow": 25, "melbourne": 60}
     for city in CITIES:
         x = np.sort(pm25.loc[pm25["city"] == city, "pm25_mean"].to_numpy())
         y = np.arange(1, len(x) + 1) / len(x) * 100
@@ -166,7 +150,6 @@ def ecdf(pm25):
 
 
 def qq_plots(pm25):
-    """Normal QQ plots for raw and log PM2.5."""
     fig, axes = _city_axes(nrows=2, height=2.8)
     for j, city in enumerate(CITIES):
         x = pm25.loc[pm25["city"] == city, "pm25_mean"]
@@ -186,7 +169,6 @@ def qq_plots(pm25):
 
 
 def outlier_timeline(pm25):
-    """Weeks that are unusual for their time of year (robust z of the seasonal anomaly)."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 6.6), sharex=True)
     for ax, city in zip(axes, CITIES):
         s = pm25[pm25["city"] == city].set_index("week")["pm25_mean"].asfreq(F.WEEK)
@@ -201,10 +183,7 @@ def outlier_timeline(pm25):
                   "eda_outliers")
 
 
-# -------------------------------------------------------------- time structure
-
 def seasonal_profile(long):
-    """Month-of-year distributions of PM2.5 and the headline awareness search."""
     fig, axes = _city_axes(nrows=2, height=2.8, sharex=True)
     months = list("JFMAMJJASOND")
     for j, city in enumerate(CITIES):
@@ -230,13 +209,11 @@ def seasonal_profile(long):
 
 
 def _year_week_grid(s):
-    """Series -> year x week-of-year matrix."""
     df = pd.DataFrame({"v": s, "year": s.index.year, "woy": s.index.dayofyear // 7})
     return df.pivot_table(index="year", columns="woy", values="v").reindex(columns=range(53))
 
 
 def calendar_heatmaps(long):
-    """Twin calendars: PM2.5 above, search below, one column per city."""
     fig, axes = plt.subplots(2, 3, figsize=(13, 3.6))
     for j, city in enumerate(CITIES):
         d = F.headline(long, city)
@@ -263,7 +240,6 @@ def calendar_heatmaps(long):
 
 
 def autocorrelation(long, nlags=60):
-    """How long each series remembers itself."""
     fig, axes = _city_axes(nrows=2, height=2.6, sharex=True, sharey=True)
     for j, city in enumerate(CITIES):
         d = F.headline(long, city)
@@ -287,7 +263,6 @@ def autocorrelation(long, nlags=60):
 
 
 def stl_decomposition(long, cities=("bangkok", "krakow")):
-    """Trend, seasonal and residual parts of PM2.5 and search."""
     fig, axes = plt.subplots(4, 2 * len(cities), figsize=(6.2 * len(cities), 7.4), sharex=True)
     for c, city in enumerate(cities):
         d = F.headline(long, city)
@@ -310,10 +285,7 @@ def stl_decomposition(long, cities=("bangkok", "krakow")):
                   "eda_stl")
 
 
-# ------------------------------------------------------------------- bivariate
-
 def scatter_lowess(long):
-    """PM2.5 against headline search with a LOWESS curve."""
     fig, axes = _city_axes(height=3.6)
     for ax, city in zip(axes[0], CITIES):
         d = F.headline(long, city).dropna()
@@ -331,7 +303,6 @@ def scatter_lowess(long):
 
 
 def pearson_vs_spearman(long):
-    """Linear vs rank correlation for every dense series."""
     summ = F.series_summary(long)
     summ = summ[summ["dense"]]
     rows = []
@@ -365,7 +336,6 @@ def pearson_vs_spearman(long):
 
 
 def rolling_correlations(long, window=26):
-    """Is the relationship stable through time?"""
     fig, ax = plt.subplots(figsize=(11, 4))
     for city in CITIES:
         r = F.rolling_correlation(F.headline(long, city), window)
@@ -380,7 +350,6 @@ def rolling_correlations(long, window=26):
 
 
 def lag_profiles(long, max_lag=8):
-    """Correlation at each lead and lag, awareness and protection terms."""
     fig, axes = _city_axes(height=3.4, sharey=True)
     for ax, city in zip(axes[0], CITIES):
         for role, color, style in [("awareness", CITY_COLOR[city], "o"), ("protection", INK2, "s")]:
@@ -399,10 +368,7 @@ def lag_profiles(long, max_lag=8):
                   "eda_lag_profiles")
 
 
-# ---------------------------------------------------------------- multivariate
-
 def correlation_heatmaps(long):
-    """Correlation matrix of PM2.5 and every dense search series."""
     fig, axes = plt.subplots(1, 3, figsize=(17, 5.4), gridspec_kw=dict(wspace=0.75))
     for ax, city in zip(axes, CITIES):
         corr = F.dense_wide(long, city).corr()
@@ -433,7 +399,6 @@ def correlation_heatmaps(long):
 
 
 def pca_summary(long):
-    """Variance explained by each component, and PC1 against PM2.5."""
     fig, axes = _city_axes(nrows=2, height=2.9)
     for j, city in enumerate(CITIES):
         idx, ratio = F.attention_index(long, city)
@@ -455,7 +420,6 @@ def pca_summary(long):
 
 
 def regimes(long, k=3):
-    """K-means on standardised PM2.5 and attention: what kinds of week are there?"""
     fig, axes = _city_axes(height=3.8)
     markers = ["o", "s", "^"]
     out = {}
@@ -483,10 +447,7 @@ def regimes(long, k=3):
     return fig, out
 
 
-# ------------------------------------------------------- corrected statistics
-
 def raw_vs_deseasonalized(table):
-    """Correlation before and after the shared season is removed, with bootstrap intervals."""
     fig, axes = _city_axes(height=3.6, sharex=True)
     for ax, city in zip(axes[0], CITIES):
         d = table[table["city"] == city].sort_values("deseason_r")
@@ -512,7 +473,6 @@ def raw_vs_deseasonalized(table):
 
 
 def deseasonalized_lags(long, max_lag=8):
-    """Lead/lag profile of the attention index once the season is removed."""
     fig, ax = plt.subplots(figsize=(8.5, 4))
     for city in CITIES:
         cc = F.lag_correlation(S.deseasonalize(F.attention_pair(long, city)), max_lag)
@@ -527,10 +487,7 @@ def deseasonalized_lags(long, max_lag=8):
                   "stats_deseasonalized_lags")
 
 
-# -------------------------------------------------------------- awareness gap
-
 def level_vs_surprise_plot(long):
-    """Effect of expected (seasonal) and unexpected pollution on attention."""
     fig, axes = _city_axes(height=2.4)
     for ax, city in zip(axes[0], CITIES):
         res = A.level_vs_surprise(F.attention_pair(long, city))
@@ -551,7 +508,6 @@ def level_vs_surprise_plot(long):
 
 
 def dose_response(long):
-    """Attention against pollution level, with the fitted switch-on point."""
     fig, axes = _city_axes(height=3.6)
     for ax, city in zip(axes[0], CITIES):
         d = F.attention_pair(long, city).dropna()
@@ -577,7 +533,6 @@ def dose_response(long):
 
 
 def episode_curves(long):
-    """Average pollution spike and the attention response around it."""
     fig, axes = _city_axes(nrows=2, height=2.7, sharex=True)
     for j, city in enumerate(CITIES):
         res = A.episode_response(F.attention_pair(long, city))
@@ -599,7 +554,6 @@ def episode_curves(long):
 
 
 def hysteresis(long):
-    """The path each pollution season traces through pollution-attention space."""
     fig, axes = _city_axes(height=3.9)
     for ax, city in zip(axes[0], CITIES):
         df = A.with_season(F.attention_pair(long, city), city)
@@ -608,7 +562,7 @@ def hysteresis(long):
             g = df[df["season"] == season][["pm25_mean", "search"]].rolling(5, min_periods=3, center=True).mean().dropna()
             alpha = 0.35 + 0.65 * k / max(len(seasons) - 1, 1)
             ax.plot(g["pm25_mean"], g["search"], color=CITY_COLOR[city], alpha=alpha, linewidth=1.8)
-            for a in range(6, len(g) - 1, 8):   # direction of travel
+            for a in range(6, len(g) - 1, 8):
                 ax.annotate("", xy=g.iloc[a + 1], xytext=g.iloc[a],
                             arrowprops=dict(arrowstyle="-|>", color=CITY_COLOR[city], alpha=alpha, lw=1.2))
             ax.scatter(g["pm25_mean"].iloc[0], g["search"].iloc[0], s=40, facecolor=SURFACE,
@@ -632,15 +586,14 @@ def hysteresis(long):
 
 
 def silent_strips(long):
-    """Every week classified: ordinary, polluted and noticed, or polluted and silent."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 3.3), sharex=True)
     for ax, city in zip(axes, CITIES):
         df, summ = A.silent_weeks(F.attention_pair(long, city), city)
         weeks = pd.date_range(df.index.min(), df.index.max(), freq=F.WEEK)
-        state = pd.Series(0.0, index=weeks)                      # no data
-        state[df.index] = 1                                       # ordinary week
-        state[df.index[df["high"] & ~df["silent"]]] = 2           # polluted, noticed
-        state[df.index[df["silent"]]] = 3                         # polluted, silent
+        state = pd.Series(0.0, index=weeks)
+        state[df.index] = 1
+        state[df.index[df["high"] & ~df["silent"]]] = 2
+        state[df.index[df["silent"]]] = 3
         cmap = mpl.colors.ListedColormap([SURFACE, EMPTY, CITY_COLOR[city], INK])
         ax.pcolormesh(weeks, [0, 1], state.to_numpy()[None, :-1], cmap=cmap, vmin=0, vmax=3,
                       edgecolors=SURFACE, linewidth=0.4)
@@ -662,10 +615,7 @@ def silent_strips(long):
     return fig
 
 
-# ------------------------------------------------------ causality & prediction
-
 def forecast_skill_plot(skill):
-    """Out-of-sample R² with and without PM2.5 among the predictors."""
     fig, ax = plt.subplots(figsize=(8, 3.8))
     x = np.arange(len(CITIES))
     for i, city in enumerate(CITIES):
@@ -689,7 +639,6 @@ def forecast_skill_plot(skill):
 
 
 def forecast_timeline(preds):
-    """Held-out predictions against what happened."""
     fig, axes = plt.subplots(3, 1, figsize=(12, 6.4), sharex=True)
     for ax, city in zip(axes, CITIES):
         pred = preds[(city, "calendar_pm25")].asfreq(F.WEEK)

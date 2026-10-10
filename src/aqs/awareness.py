@@ -1,8 +1,3 @@
-"""The Awareness Gap: when does the public notice pollution, and when does it stop?
-
-Every function takes a PM2.5/attention pair on a regular weekly index (see
-features.attention_pair), where attention is in standard deviations.
-"""
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -11,12 +6,11 @@ from . import features as F
 from .config import CITIES
 from .stats import RNG_SEED, expected_and_surprise
 
-HAC_LAGS = 8          # weeks of autocorrelation allowed for in standard errors
-EPISODE_Z = 2.0       # robust z of the seasonal surprise that starts an episode
-EPISODE_QUIET = 3     # weeks without a spike before a new episode can start
-WINDOW = (-4, 8)      # weeks around an episode onset
+HAC_LAGS = 8
+EPISODE_Z = 2.0
+EPISODE_QUIET = 3
+WINDOW = (-4, 8)
 HIGH_QUANTILE = 2 / 3
-# Month in which a city's pollution year starts, chosen to fall in its clean season.
 SEASON_START = {"bangkok": 7, "krakow": 7, "melbourne": 1}
 
 
@@ -25,8 +19,6 @@ def _hac(y, X):
 
 
 def level_vs_surprise(d):
-    """Does attention follow the pollution the calendar predicts, or the part it does not?
-    Coefficients are attention (SD) per 10 µg/m³ of each component."""
     parts = expected_and_surprise(d["pm25_mean"]) / 10
     df = pd.concat([d["search"], parts], axis=1).dropna()
     fit = _hac(df["search"], df[["expected", "surprise"]])
@@ -48,10 +40,6 @@ def _best_hinge(pm, y):
 
 
 def attention_threshold(d, n_boot=500, block=8, seed=RNG_SEED):
-    """Pollution level at which attention switches on.
-
-    Fits attention = base + slope * max(0, PM2.5 - threshold), searching the
-    threshold over the observed range, and compares it with a straight line."""
     df = d.dropna()
     pm, y = df["pm25_mean"].to_numpy(), df["search"].to_numpy()
     n = len(pm)
@@ -69,8 +57,6 @@ def attention_threshold(d, n_boot=500, block=8, seed=RNG_SEED):
 
 
 def episodes(d):
-    """Onset weeks of pollution spikes: the seasonal surprise jumps past
-    EPISODE_Z robust SDs after at least EPISODE_QUIET weeks without a spike."""
     z = F.robust_z(expected_and_surprise(d["pm25_mean"])["surprise"])
     hot = (z >= EPISODE_Z).fillna(False)
     recent = hot.shift(1).rolling(EPISODE_QUIET, min_periods=1).max().fillna(0).astype(bool)
@@ -78,7 +64,6 @@ def episodes(d):
 
 
 def episode_windows(d):
-    """PM2.5 and attention around each onset, relative to the four weeks before it."""
     rows = []
     offsets = range(WINDOW[0], WINDOW[1] + 1)
     for onset in episodes(d):
@@ -93,7 +78,6 @@ def episode_windows(d):
 
 
 def episode_response(d, n_boot=2000, seed=RNG_SEED):
-    """Average response curve with a bootstrap band (episodes resampled whole)."""
     win = episode_windows(d)
     out = {}
     rng = np.random.default_rng(seed)
@@ -114,8 +98,6 @@ def episode_response(d, n_boot=2000, seed=RNG_SEED):
 
 
 def with_season(d, city):
-    """Add pollution-year labels, the high-pollution flag, and how many
-    high-pollution weeks the city has already had this season."""
     df = d.copy()
     start = SEASON_START[city]
     df["season"] = df.index.year - (df.index.month < start)
@@ -125,8 +107,6 @@ def with_season(d, city):
 
 
 def habituation(d, city):
-    """Among high-pollution weeks: does attention fall as the season wears on,
-    holding the pollution level fixed? A negative effect means habituation."""
     df = with_season(d, city)
     df = df[df["high"]].dropna(subset=["search", "pm25_mean"])
 
@@ -136,8 +116,6 @@ def habituation(d, city):
 
     full = fit(df)
     ci = full.conf_int().loc["prior_high_weeks"]
-    # the same estimate with each season left out in turn: three seasons is
-    # few enough that one unusual winter could be driving the result
     loso = [fit(df[df["season"] != s]).params["prior_high_weeks"]
             for s, n in df["season"].value_counts().items() if n >= 5]
     return {"high_weeks": len(df), "effect_per_week": full.params["prior_high_weeks"], "low": ci[0], "high": ci[1],
@@ -145,7 +123,6 @@ def habituation(d, city):
 
 
 def silent_weeks(d, city, n_boot=2000, block=8, seed=RNG_SEED):
-    """High-pollution weeks in which attention stayed below its own median."""
     df = with_season(d, city).dropna(subset=["search", "pm25_mean"])
     df["silent"] = df["high"] & (df["search"] < df["search"].median())
     high = df[df["high"]]
@@ -161,7 +138,6 @@ def silent_weeks(d, city, n_boot=2000, block=8, seed=RNG_SEED):
 
 
 def scorecard(long):
-    """One row per city: the Awareness Gap measures side by side."""
     rows = []
     for city in CITIES:
         d = F.attention_pair(long, city)
