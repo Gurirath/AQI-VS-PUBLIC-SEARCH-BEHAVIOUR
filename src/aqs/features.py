@@ -41,6 +41,7 @@ def series_summary(long):
 
 
 def dense_wide(long, city):
+    long = long[long["role"] != "health"]
     summ = series_summary(long)
     keep = summ[(summ["city"] == city) & summ["dense"]]
     cols = {"PM2.5": pair(long, city, keep["term"].iloc[0], keep["geo_level"].iloc[0])["pm25_mean"]}
