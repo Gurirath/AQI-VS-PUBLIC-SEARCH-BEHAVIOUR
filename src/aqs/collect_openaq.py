@@ -1,12 +1,3 @@
-"""Pull daily PM2.5 from OpenAQ v3 for every study city.
-
-Sensor selection is rule-based rather than hand-picked: every PM2.5 sensor
-within RADIUS_M of the city centre whose lifetime overlaps the study window is
-pulled. Quality filtering (coverage thresholds) happens later, in cleaning, so
-the raw files and the sensor manifest record everything that was available.
-
-Run:  python -m aqs.collect_openaq [--force] [city ...]
-"""
 import os
 import sys
 import time
@@ -22,11 +13,10 @@ PAGE_SIZE = 1000
 
 
 def _call(fn, **kwargs):
-    """Call the API, backing off and retrying on rate limits or transient errors."""
     for attempt in range(5):
         try:
             result = fn(**kwargs)
-            time.sleep(1.1)  # stay under 60 requests/minute
+            time.sleep(1.1)
             return result
         except Exception as e:
             wait = 65 if "rate" in type(e).__name__.lower() else 10 * (attempt + 1)
@@ -36,7 +26,6 @@ def _call(fn, **kwargs):
 
 
 def discover_sensors(client, city):
-    """All PM2.5 sensors near the city whose lifetime overlaps the study window."""
     cfg = CITIES[city]
     sensors, page = [], 1
     while True:
@@ -71,7 +60,6 @@ def discover_sensors(client, city):
 
 
 def pull_sensor(client, sensor_id):
-    """Daily means for one sensor across the study window."""
     records, page = [], 1
     while True:
         resp = _call(
@@ -86,8 +74,6 @@ def pull_sensor(client, sensor_id):
         for m in resp.results:
             records.append({
                 "sensor_id": sensor_id,
-                # local calendar day, kept as-is: converting to UTC would push
-                # Bangkok/Melbourne days into the previous date (and week)
                 "date": m.period.datetime_from.local[:10],
                 "pm25": m.value,
                 "percent_complete": m.coverage.percent_complete if m.coverage else None,
@@ -125,7 +111,6 @@ def collect_city(client, city, force=False):
 
 def main(argv):
     load_dotenv(ROOT / ".env")
-    # python.org macOS builds ship without a CA bundle
     os.environ.setdefault("SSL_CERT_FILE", certifi.where())
     force = "--force" in argv
     cities = [a for a in argv if not a.startswith("--")] or list(CITIES)

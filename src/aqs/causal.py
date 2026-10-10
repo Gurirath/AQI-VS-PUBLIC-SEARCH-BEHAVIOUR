@@ -1,4 +1,3 @@
-"""Directional tests and out-of-sample prediction."""
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -18,7 +17,6 @@ SEASON_FEATURES = ["month_sin", "month_cos"]
 
 
 def stationarity_table(long):
-    """ADF test on both series, before and after the season is removed."""
     rows = []
     for city in CITIES:
         d = F.attention_pair(long, city)
@@ -30,11 +28,6 @@ def stationarity_table(long):
 
 
 def granger(d, cause, effect, lags):
-    """Does the past of `cause` improve a forecast of `effect` beyond effect's own past?
-
-    Fitted directly as a lagged regression on the regular weekly index, so a
-    week is used only when all of its lags exist; nothing is interpolated
-    across gaps and both series get the same treatment."""
     df = pd.DataFrame({"y": d[effect]})
     for k in range(1, lags + 1):
         df[f"own{k}"] = d[effect].shift(k)
@@ -49,8 +42,6 @@ def granger(d, cause, effect, lags):
 
 
 def granger_table(long):
-    """Both directions, lags 1-4, on seasonal residuals, FDR-adjusted across all tests.
-    The reverse direction (search -> PM2.5) is a placebo: searching cannot change the air."""
     rows = []
     for city in CITIES:
         res = deseasonalize(F.attention_pair(long, city))
@@ -65,7 +56,6 @@ def granger_table(long):
 
 
 def model_frame(d):
-    """Features on the regular index, so a lag never reaches across a gap."""
     df = pd.DataFrame({"attention": d["search"], "pm25": d["pm25_mean"]})
     for k in range(1, 5):
         df[f"pm25_lag{k}"] = d["pm25_mean"].shift(k)
@@ -76,7 +66,6 @@ def model_frame(d):
 
 
 def out_of_fold(df, features, params=RF_PARAMS, splits=5):
-    """Predictions for each week from a model trained only on earlier weeks."""
     pred = pd.Series(np.nan, index=df.index)
     for train, test in TimeSeriesSplit(n_splits=splits).split(df):
         rf = RandomForestRegressor(**params).fit(df.iloc[train][features], df.iloc[train]["attention"])
@@ -85,8 +74,6 @@ def out_of_fold(df, features, params=RF_PARAMS, splits=5):
 
 
 def forecast_skill(long, depths=(2, 4, 6)):
-    """Out-of-sample skill of a calendar-only model against calendar + PM2.5.
-    R² is pooled over all held-out weeks; the gain is what PM2.5 adds."""
     rows, preds = [], {}
     for city in CITIES:
         df = model_frame(F.attention_pair(long, city))
@@ -111,7 +98,6 @@ def forecast_skill(long, depths=(2, 4, 6)):
 
 
 def verdicts(corr, grang, skill, card):
-    """Per-city verdict assembled from computed results (nothing typed in by hand)."""
     rows = []
     for city in CITIES:
         c = corr[(corr["city"] == city) & (corr["series"] == "attention index (PC1)")].iloc[0]
