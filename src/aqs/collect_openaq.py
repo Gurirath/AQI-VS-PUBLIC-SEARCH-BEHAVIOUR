@@ -110,6 +110,7 @@ def collect_city(client, city, force=False):
 
 
 def main(argv):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     load_dotenv(ROOT / ".env")
     os.environ.setdefault("SSL_CERT_FILE", certifi.where())
     force = "--force" in argv
