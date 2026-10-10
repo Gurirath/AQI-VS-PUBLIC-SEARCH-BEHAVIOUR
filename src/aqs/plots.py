@@ -14,8 +14,8 @@ from . import stats as S
 from .config import CITIES, FIGURES, WHO_24H_GUIDELINE
 
 SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
-CITY_COLOR = {"bangkok": "#2a78d6", "krakow": "#eb6834", "melbourne": "#1baf7a"}
-CITY_NAME = {"bangkok": "Bangkok", "krakow": "Kraków", "melbourne": "Melbourne"}
+CITY_COLOR = {city: cfg["color"] for city, cfg in CITIES.items()}
+CITY_NAME = {city: cfg["name"] for city, cfg in CITIES.items()}
 PM_COLOR = INK2
 EMPTY = "#f0efec"
 
@@ -52,7 +52,8 @@ def finish(fig, title, subtitle=None, name=None):
     return fig
 
 
-def _city_axes(ncols=3, nrows=1, height=3.2, **kw):
+def _city_axes(ncols=None, nrows=1, height=3.2, **kw):
+    ncols = ncols or len(CITIES)
     fig, axes = plt.subplots(nrows, ncols, figsize=(4.3 * ncols, height * nrows), squeeze=False, **kw)
     return fig, axes
 
@@ -66,7 +67,7 @@ def _note(ax, text, loc="upper right"):
 
 def coverage_strips(pm25):
     weeks = pd.date_range(pm25["week"].min(), pm25["week"].max(), freq=F.WEEK)
-    fig, axes = plt.subplots(3, 1, figsize=(12, 3.4), sharex=True)
+    fig, axes = plt.subplots(len(CITIES), 1, figsize=(12, 1 + 0.8 * len(CITIES)), sharex=True)
     for ax, city in zip(axes, CITIES):
         days = pm25[pm25["city"] == city].set_index("week")["n_days"].reindex(weeks).fillna(0)
         mesh = ax.pcolormesh(weeks, [0, 1], days.to_numpy()[None, :-1], cmap=SEQ_BLUE, vmin=0, vmax=7)
@@ -110,12 +111,13 @@ def distributions(pm25):
             ax = axes[i][j]
             ax.hist(vals, bins=24, color=CITY_COLOR[city], edgecolor=SURFACE, linewidth=1)
             guide = WHO_24H_GUIDELINE if i == 0 else np.log10(WHO_24H_GUIDELINE)
-            if vals.max() > guide:
+            mostly_clean = x.median() < WHO_24H_GUIDELINE / 2
+            if vals.min() < guide < vals.max():
                 ax.axvline(guide, color=INK, linewidth=1)
                 ax.text(guide, ax.get_ylim()[1], " WHO 15 ", fontsize=8.5, color=INK, va="top",
-                        ha="right" if city == "melbourne" else "left")
+                        ha="right" if mostly_clean else "left")
             _note(ax, f"skew {stats.skew(vals):+.2f}\nkurtosis {stats.kurtosis(vals):+.2f}",
-                  "upper left" if city == "melbourne" else "upper right")
+                  "upper left" if mostly_clean else "upper right")
             ax.yaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True, nbins=5))
             ax.set_xlabel(label)
             ax.set_ylabel("weeks")
@@ -128,25 +130,27 @@ def distributions(pm25):
 
 def ecdf(pm25):
     fig, ax = plt.subplots(figsize=(8, 4.2))
-    label_at = {"bangkok": 60, "krakow": 25, "melbourne": 60}
+    label_at = {"krakow": 25}
+    upper = max(70, pm25["pm25_mean"].max() * 1.15)
     for city in CITIES:
+        at = label_at.get(city, 60)
         x = np.sort(pm25.loc[pm25["city"] == city, "pm25_mean"].to_numpy())
         y = np.arange(1, len(x) + 1) / len(x) * 100
         above = (x > WHO_24H_GUIDELINE).mean() * 100
         ax.step(x, y, where="post", color=CITY_COLOR[city],
                 label=f"{CITY_NAME[city]}: {above:.0f}% of weeks above WHO 15")
-        ax.text(np.percentile(x, label_at[city]) * 0.95, label_at[city], CITY_NAME[city],
+        ax.text(np.percentile(x, at) * 0.95, at, CITY_NAME[city],
                 color=INK, fontsize=9, ha="right", va="center")
     ax.axvline(WHO_24H_GUIDELINE, color=INK, linewidth=1)
     ax.set_xscale("log")
-    ax.set_xticks([3, 5, 10, 15, 25, 50])
+    ax.set_xticks([t for t in [3, 5, 10, 15, 25, 50, 100, 250, 500] if t < upper])
     ax.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
     ax.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
-    ax.set_xlim(3, 70)
+    ax.set_xlim(3, upper)
     ax.set_xlabel("weekly PM2.5 (µg/m³, log scale)")
     ax.set_ylabel("% of weeks at or below")
     ax.legend(loc="lower right")
-    return finish(fig, "Three different pollution regimes", name="eda_ecdf")
+    return finish(fig, "Every city has its own pollution regime", name="eda_ecdf")
 
 
 def qq_plots(pm25):
@@ -169,7 +173,7 @@ def qq_plots(pm25):
 
 
 def outlier_timeline(pm25):
-    fig, axes = plt.subplots(3, 1, figsize=(12, 6.6), sharex=True)
+    fig, axes = plt.subplots(len(CITIES), 1, figsize=(12, 2.2 * len(CITIES)), sharex=True)
     for ax, city in zip(axes, CITIES):
         s = pm25[pm25["city"] == city].set_index("week")["pm25_mean"].asfreq(F.WEEK)
         z = F.robust_z(F.seasonal_anomaly(s))
@@ -214,7 +218,7 @@ def _year_week_grid(s):
 
 
 def calendar_heatmaps(long):
-    fig, axes = plt.subplots(2, 3, figsize=(13, 3.6))
+    fig, axes = plt.subplots(2, len(CITIES), figsize=(13 / 3 * len(CITIES), 3.6))
     for j, city in enumerate(CITIES):
         d = F.headline(long, city)
         for i, (col, cmap, label) in enumerate([("pm25_mean", SEQ_BLUE, "PM2.5"), ("search", SEQ_ORANGE, "search")]):
@@ -343,7 +347,7 @@ def rolling_correlations(long, window=26):
     ax.axhline(0, color=AXIS, linewidth=1)
     ax.set_ylim(-1, 1)
     ax.set_ylabel(f"{window}-week rolling correlation")
-    ax.legend(loc="lower left", ncols=3)
+    ax.legend(loc="lower left", ncols=len(CITIES))
     return finish(fig, "The pollution–search link is strong in Bangkok and Kraków, but not constant",
                   "Rolling Pearson correlation between PM2.5 and each city's headline search term. Breaks are data gaps.",
                   "eda_rolling_correlation")
@@ -369,7 +373,7 @@ def lag_profiles(long, max_lag=8):
 
 
 def correlation_heatmaps(long):
-    fig, axes = plt.subplots(1, 3, figsize=(17, 5.4), gridspec_kw=dict(wspace=0.75))
+    fig, axes = plt.subplots(1, len(CITIES), figsize=(17 / 3 * len(CITIES), 5.4), gridspec_kw=dict(wspace=0.75))
     for ax, city in zip(axes, CITIES):
         corr = F.dense_wide(long, city).corr()
         corr.index = corr.columns = [c.replace("English, ", "EN, ") for c in corr.columns]
@@ -586,7 +590,7 @@ def hysteresis(long):
 
 
 def silent_strips(long):
-    fig, axes = plt.subplots(3, 1, figsize=(12, 3.3), sharex=True)
+    fig, axes = plt.subplots(len(CITIES), 1, figsize=(12, 0.9 + 0.8 * len(CITIES)), sharex=True)
     for ax, city in zip(axes, CITIES):
         df, summ = A.silent_weeks(F.attention_pair(long, city), city)
         weeks = pd.date_range(df.index.min(), df.index.max(), freq=F.WEEK)
@@ -639,7 +643,7 @@ def forecast_skill_plot(skill):
 
 
 def forecast_timeline(preds):
-    fig, axes = plt.subplots(3, 1, figsize=(12, 6.4), sharex=True)
+    fig, axes = plt.subplots(len(CITIES), 1, figsize=(12, 0.4 + 2 * len(CITIES)), sharex=True)
     for ax, city in zip(axes, CITIES):
         pred = preds[(city, "calendar_pm25")].asfreq(F.WEEK)
         actual = preds[(city, "actual")].reindex(pred.index)

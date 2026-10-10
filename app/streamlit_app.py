@@ -14,8 +14,8 @@ from aqs import awareness as A, features as F, stats as S
 from aqs.config import CITIES, INTERIM, PROCESSED, WHO_24H_GUIDELINE
 
 SURFACE, INK, INK2, MUTED, GRID, AXIS, EMPTY = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#f0efec"
-COLOR = {"bangkok": "#2a78d6", "krakow": "#eb6834", "melbourne": "#1baf7a"}
-NAME = {"bangkok": "Bangkok", "krakow": "Kraków", "melbourne": "Melbourne"}
+COLOR = {city: cfg["color"] for city, cfg in CITIES.items()}
+NAME = {city: cfg["name"] for city, cfg in CITIES.items()}
 ATTENTION = "attention index (all terms combined)"
 
 st.set_page_config(page_title="Air quality vs search", page_icon="🌫️", layout="wide")
@@ -38,7 +38,8 @@ def correlations():
 
 @st.cache_data
 def verdicts():
-    return pd.read_csv(PROCESSED / "verdicts.csv", index_col="city")
+    v = pd.read_csv(PROCESSED / "verdicts.csv")
+    return v[v["role"] == "attention"].set_index("city")
 
 
 @st.cache_data
@@ -115,7 +116,7 @@ def lag_chart(profile, city, chosen):
 
 def silent_chart():
     long = load()[0]
-    fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.06)
+    fig = make_subplots(rows=len(CITIES), cols=1, shared_xaxes=True, vertical_spacing=0.06)
     for i, city in enumerate(CITIES, start=1):
         df, _ = A.silent_weeks(F.attention_pair(long, city), city)
         weeks = pd.date_range(df.index.min(), df.index.max(), freq=F.WEEK)
@@ -131,7 +132,7 @@ def silent_chart():
             hovertemplate="%{x|%d %b %Y}<br>%{customdata[0]}<br>PM2.5 %{customdata[1]} µg/m³<extra>" + NAME[city] + "</extra>"), i, 1)
         fig.update_yaxes(showticklabels=False, showgrid=False, title_text=NAME[city], row=i, col=1, range=[0, 1])
     fig.update_layout(bargap=0)
-    return style(fig, 300)
+    return style(fig, 100 * len(CITIES))
 
 
 def interval_chart(res, city):
@@ -194,7 +195,7 @@ def coverage_chart():
         colorbar=dict(title="days", thickness=10, len=0.8),
         hovertemplate="%{y}, week of %{x|%d %b %Y}<br>%{z} days of PM2.5 data<extra></extra>"))
     fig.update_yaxes(autorange="reversed", showgrid=False)
-    return style(fig, 240)
+    return style(fig, 60 * (len(CITIES) + 1))
 
 
 def zero_chart(city):
@@ -212,10 +213,10 @@ def zero_chart(city):
 def page_overview():
     st.title("Does bad air show up in what people search for?")
     st.markdown(
-        "Weekly PM2.5 pollution against Google search interest in three contrasting cities, 2022–2024. "
+        f"Weekly PM2.5 pollution against Google search interest in {len(CITIES)} contrasting cities, 2022–2024. "
         "Most studies stop at a correlation. This project asks **when the public notices bad air, and when it stops noticing**.")
     v, card = verdicts(), scorecard()
-    for col, city in zip(st.columns(3), CITIES):
+    for col, city in zip(st.columns(len(CITIES)), CITIES):
         with col.container(border=True):
             st.markdown(f"<span style='color:{COLOR[city]};font-size:1.4rem'>●</span> **{NAME[city]}**", unsafe_allow_html=True)
             st.subheader(verdict_label(v.loc[city]))
@@ -253,7 +254,9 @@ def page_explore(city):
     m1.metric("Pearson correlation", f"{stats.pearsonr(both['pm25_mean'], both['search'])[0]:.2f}")
     m2.metric("Spearman (rank) correlation", f"{stats.spearmanr(both['pm25_mean'], both['search'])[0]:.2f}")
     m3.metric("Weeks compared", len(both))
-    m4.metric("Lag with the highest correlation", f"{int(profile.idxmax()):+d} weeks")
+    peak = F.peak_lag(profile)
+    m4.metric("Lag with the highest correlation", "no peak" if peak is None else f"{peak:+d} weeks",
+              help="No peak: the highest correlation sits at the edge of the ±8 week window.")
     left, right = st.columns([3, 2])
     with left:
         st.caption("Pollution (top) and search (bottom) on a shared time axis")
@@ -313,7 +316,7 @@ def page_gap(city):
 def page_data(city):
     st.title("Data and methods")
     st.subheader("PM2.5 coverage")
-    st.caption("Days of valid PM2.5 behind each week. All three cities lose the same weeks in early 2023: that gap is in OpenAQ itself.")
+    st.caption("Days of valid PM2.5 behind each week. Every city loses the same weeks in early 2023: that gap is in OpenAQ itself.")
     show(coverage_chart())
     sel = pd.read_csv(INTERIM / "sensor_selection.csv")
     pm25 = load()[1]
@@ -339,7 +342,7 @@ def page_data(city):
         "- Three years of weekly data: five or six pollution episodes and three seasons per city.\n"
         "- The response is faster than a week, so weekly data cannot show which comes first.\n"
         "- Google Trends is a relative index: patterns can be compared between cities, levels cannot.\n"
-        "- Melbourne is missing about a year of PM2.5; Kraków rests on two monitors.")
+        "- Melbourne is missing about a year of PM2.5; Kraków rests on two monitors and Lahore on one.")
 
 
 PAGES = {"Overview": lambda c: page_overview(), "Explore a city": page_explore,

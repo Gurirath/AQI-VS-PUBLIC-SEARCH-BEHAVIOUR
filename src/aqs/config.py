@@ -14,10 +14,14 @@ RADIUS_M = 25_000
 PM25_PARAMETER_ID = 2
 
 CITIES = {
-    "bangkok": {"lat": 13.7563, "lon": 100.5018, "geo_country": "TH", "geo_region": "TH-10"},
-    "krakow": {"lat": 50.0647, "lon": 19.9450, "geo_country": "PL", "geo_region": "PL-MA"},
-    "melbourne": {"lat": -37.8136, "lon": 144.9631, "geo_country": "AU", "geo_region": "AU-VIC"},
-    "lahore": {"lat": 31.5204, "lon": 74.3587, "geo_country": "PK", "geo_region": "PK-PB"},
+    "bangkok": {"name": "Bangkok", "color": "#2a78d6", "lat": 13.7563, "lon": 100.5018,
+                "geo_country": "TH", "geo_region": "TH-10"},
+    "krakow": {"name": "Kraków", "color": "#eb6834", "lat": 50.0647, "lon": 19.9450,
+               "geo_country": "PL", "geo_region": "PL-MA"},
+    "melbourne": {"name": "Melbourne", "color": "#1baf7a", "lat": -37.8136, "lon": 144.9631,
+                  "geo_country": "AU", "geo_region": "AU-VIC"},
+    "lahore": {"name": "Lahore", "color": "#eda100", "lat": 31.5204, "lon": 74.3587,
+               "geo_country": "PK", "geo_region": "PK-PB"},
 }
 
 TRENDS_TIMEFRAME = f"{DATE_FROM} {DATE_TO}"
@@ -95,10 +99,10 @@ def default_geo_level(city, term):
 
 
 HEADLINE_TERMS = {
-    "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th"},
-    "krakow": {"awareness": "smog_pl", "protection": "air_purifier_pl"},
-    "melbourne": {"awareness": "air_quality", "protection": "air_purifier"},
-    "lahore": {"awareness": "air_quality", "protection": "air_purifier"},
+    "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th", "health": "hospital_th"},
+    "krakow": {"awareness": "smog_pl", "protection": "air_purifier_pl", "health": "hospital_pl"},
+    "melbourne": {"awareness": "air_quality", "protection": "air_purifier", "health": "hospital"},
+    "lahore": {"awareness": "smog_pk", "protection": "mask_pk", "health": "hospital"},
 }
 
 MAX_ZERO_SHARE = 0.5
