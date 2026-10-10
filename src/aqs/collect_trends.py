@@ -5,9 +5,10 @@ import pandas as pd
 from trendspyg import RateLimitError, download_google_trends_interest_over_time
 from trendspyg.config import US_STATES
 
-from .config import BASELINE_TERMS, CITIES, LOCAL_TERMS, RAW_TRENDS, ROOT, TRENDS_TIMEFRAME, health_terms
+from .config import (BASELINE_GEO_LEVELS, BASELINE_TERMS, CITIES, HEALTH_GEO_LEVEL, LOCAL_TERMS, RAW_TRENDS, ROOT,
+                     TRENDS_TIMEFRAME, health_terms)
 
-PAUSE_S = 450
+PAUSE_S = 90
 COOLDOWN_S = 35 * 60
 
 US_STATES.update({cfg["geo_region"]: city for city, cfg in CITIES.items()})
@@ -16,9 +17,9 @@ US_STATES.update({cfg["geo_region"]: city for city, cfg in CITIES.items()})
 def series_plan(city):
     cfg = CITIES[city]
     plan = [(cfg["geo_region"], t["key"], t["keyword"]) for t in LOCAL_TERMS[city]]
-    plan += [(cfg["geo_region"], k, kw) for k, kw in BASELINE_TERMS.items()]
-    plan += [(cfg["geo_country"], k, kw) for k, kw in BASELINE_TERMS.items()]
-    plan += [(cfg["geo_region"], t["key"], t["keyword"]) for t in health_terms(city)]
+    for level in BASELINE_GEO_LEVELS[city]:
+        plan += [(cfg[f"geo_{level}"], k, kw) for k, kw in BASELINE_TERMS.items()]
+    plan += [(cfg[f"geo_{HEALTH_GEO_LEVEL}"], t["key"], t["keyword"]) for t in health_terms(city)]
     return plan
 
 

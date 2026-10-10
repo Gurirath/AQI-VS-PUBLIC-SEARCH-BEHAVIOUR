@@ -3,7 +3,8 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from statsmodels.tsa.seasonal import STL
 
-from .config import BASELINE_TERMS, HEADLINE_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE, PROCESSED, INTERIM, health_terms
+from .config import (BASELINE_TERMS, HEADLINE_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE, PROCESSED, INTERIM,
+                     default_geo_level, health_terms)
 
 WEEK = "7D"
 
@@ -16,14 +17,16 @@ def load_pm25():
     return pd.read_csv(INTERIM / "aq_weekly_all.csv", parse_dates=["week"])
 
 
-def term_label(city, term, geo_level="region"):
+def term_label(city, term, geo_level=None):
     local = {t["key"]: t["label"] for t in LOCAL_TERMS[city] + health_terms(city)}
     if term in local:
         return local[term]
+    geo_level = geo_level or default_geo_level(city, term)
     return f"{BASELINE_TERMS[term]} (English, {geo_level})"
 
 
-def pair(long, city, term, geo_level="region"):
+def pair(long, city, term, geo_level=None):
+    geo_level = geo_level or default_geo_level(city, term)
     d = long[(long["city"] == city) & (long["term"] == term) & (long["geo_level"] == geo_level)]
     return d.set_index("week")[["pm25_mean", "search"]].asfreq(WEEK)
 

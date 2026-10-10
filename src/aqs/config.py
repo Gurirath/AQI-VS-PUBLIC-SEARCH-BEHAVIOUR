@@ -24,6 +24,13 @@ TRENDS_TIMEFRAME = f"{DATE_FROM} {DATE_TO}"
 
 BASELINE_TERMS = {"air_quality": "air quality", "air_purifier": "air purifier", "N95_mask": "N95 mask"}
 
+BASELINE_GEO_LEVELS = {
+    "bangkok": ("region", "country"),
+    "krakow": ("region", "country"),
+    "melbourne": ("region", "country"),
+    "lahore": ("country",),
+}
+
 LOCAL_TERMS = {
     "bangkok": [
         {"key": "pm25_th", "label": "PM2.5 (Thai usage)", "keyword": "PM2.5", "role": "awareness"},
@@ -52,7 +59,7 @@ HEALTH_TERMS = [
     {"key": "hospital", "keyword": "hospital",
      "local": {"bangkok": "โรงพยาบาล", "krakow": "szpital"}},
     {"key": "breathing_difficulty", "keyword": "breathing difficulty",
-     "local": {"bangkok": "หายใจลำบาก", "krakow": "duszność"}},
+     "local": {"bangkok": "หายใจลำบาก", "krakow": "duszność"}, "no_english": ("bangkok", "krakow")},
     {"key": "cough_medicine", "keyword": "cough medicine",
      "local": {"bangkok": "ยาแก้ไอ", "krakow": "syrop na kaszel"}},
     {"key": "eye_drops", "keyword": "eye drops",
@@ -63,17 +70,29 @@ HEALTH_TERMS = [
 
 HEALTH_LOCAL_LANGUAGE = {"bangkok": ("th", "Thai"), "krakow": ("pl", "Polish")}
 
+HEALTH_GEO_LEVEL = "country"
+
 
 def health_terms(city):
     terms = []
     for t in HEALTH_TERMS:
-        terms.append({"key": t["key"], "label": f"{t['keyword']} (English, region)",
-                      "keyword": t["keyword"], "role": "health"})
+        if city not in t.get("no_english", ()):
+            terms.append({"key": t["key"], "label": f"{t['keyword']} (English, {HEALTH_GEO_LEVEL})",
+                          "keyword": t["keyword"], "role": "health"})
         if city in t["local"]:
             suffix, language = HEALTH_LOCAL_LANGUAGE[city]
             terms.append({"key": f"{t['key']}_{suffix}", "label": f"{t['keyword']} ({language})",
                           "keyword": t["local"][city], "role": "health"})
     return terms
+
+
+def default_geo_level(city, term):
+    if term in BASELINE_TERMS:
+        return BASELINE_GEO_LEVELS[city][0]
+    if any(t["key"] == term for t in health_terms(city)):
+        return HEALTH_GEO_LEVEL
+    return "region"
+
 
 HEADLINE_TERMS = {
     "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th"},

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from .config import (BASELINE_TERMS, CITIES, DATE_FROM, DATE_TO, HEALTH_TERMS, INTERIM, LOCAL_TERMS,
-                     PROCESSED, RAW_AQ, RAW_TRENDS, health_terms)
+                     PROCESSED, RAW_AQ, RAW_TRENDS, default_geo_level, health_terms)
 
 PM25_MAX = 1000
 MIN_DAY_COVERAGE = 50
@@ -97,10 +97,12 @@ def main():
     long.to_csv(PROCESSED / "search_long.csv", index=False)
 
     wide_terms = [*BASELINE_TERMS, *(t["key"] for t in HEALTH_TERMS)]
-    english = trends[(trends["geo_level"] == "region") & trends["term"].isin(wide_terms)]
+    levels = [default_geo_level(c, t) for c, t in zip(trends["city"], trends["term"])]
+    english = trends[(trends["geo_level"] == levels) & trends["term"].isin(wide_terms)]
     wide = english.pivot(index=["week", "city"], columns="term", values="search").reset_index()
     wide = aq[["week", "city", "pm25_mean"]].merge(wide, on=["week", "city"], how="inner")
     wide = wide.sort_values(["city", "week"]).reindex(columns=["week", "pm25_mean", "city", *wide_terms])
+    wide[wide_terms] = wide[wide_terms].astype("Int64")
     wide.to_csv(PROCESSED / "all_cities_combined.csv", index=False)
     print(f"saved: {len(long)} long rows, {len(wide)} wide rows")
 
