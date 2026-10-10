@@ -41,12 +41,12 @@ def granger(d, cause, effect, lags):
     return {"weeks": len(df), "F": f, "p": p}
 
 
-def granger_table(long):
+def granger_table(long, role="attention"):
     rows = []
     for city in CITIES:
-        res = deseasonalize(F.attention_pair(long, city))
-        for direction, cause, effect in [("PM2.5 → attention", "pm25_mean", "search"),
-                                         ("attention → PM2.5 (placebo)", "search", "pm25_mean")]:
+        res = deseasonalize(F.role_pair(long, city, role))
+        for direction, cause, effect in [(f"PM2.5 → {role}", "pm25_mean", "search"),
+                                         (f"{role} → PM2.5 (placebo)", "search", "pm25_mean")]:
             for lags in range(1, MAX_LAG + 1):
                 rows.append({"city": city, "direction": direction, "lags": lags, **granger(res, cause, effect, lags)})
     out = pd.DataFrame(rows)
@@ -73,10 +73,10 @@ def out_of_fold(df, features, params=RF_PARAMS, splits=5):
     return pred.dropna()
 
 
-def forecast_skill(long, depths=(2, 4, 6)):
+def forecast_skill(long, depths=(2, 4, 6), role="attention"):
     rows, preds = [], {}
     for city in CITIES:
-        df = model_frame(F.attention_pair(long, city))
+        df = model_frame(F.role_pair(long, city, role))
         row = {"city": city, "weeks": len(df)}
         for name, feats in [("calendar", SEASON_FEATURES), ("calendar_pm25", SEASON_FEATURES + PM_FEATURES)]:
             pred = out_of_fold(df, feats)
@@ -97,13 +97,13 @@ def forecast_skill(long, depths=(2, 4, 6)):
     return pd.DataFrame(rows).set_index("city"), preds
 
 
-def verdicts(corr, grang, skill, card):
+def verdicts(corr, grang, skill, card, role="attention"):
     rows = []
     for city in CITIES:
-        c = corr[(corr["city"] == city) & (corr["series"] == "attention index (PC1)")].iloc[0]
+        c = corr[(corr["city"] == city) & (corr["series"] == F.role_label(city, role))].iloc[0]
         g = grang[grang["city"] == city]
-        fwd = g[g["direction"].str.startswith("PM2.5")]
-        rev = g[g["direction"].str.startswith("attention")]
+        forward = g["direction"].str.startswith("PM2.5")
+        fwd, rev = g[forward], g[~forward]
         rows.append({
             "city": city,
             "deseason_r": c["deseason_r"], "correlation_survives": bool(c["significant"]),

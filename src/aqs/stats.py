@@ -62,19 +62,19 @@ def bh_adjust(p):
     return out
 
 
-def _series_row(city, label, d):
+def _series_row(city, label, d, **meta):
     res = deseasonalize(d)
     both = d.dropna()
     lags = F.lag_correlation(res.rename(columns={"pm25_mean": "pm25_mean", "search": "search"}))
     lo, hi = block_bootstrap_ci(res["pm25_mean"], res["search"])
     return {
-        "city": city, "series": label, "weeks": len(both),
+        "city": city, "series": label, **meta, "weeks": len(both),
         "raw_r": stats.pearsonr(both["pm25_mean"], both["search"])[0],
         "raw_spearman": stats.spearmanr(both["pm25_mean"], both["search"])[0],
         "deseason_r": _corr(res["pm25_mean"].to_numpy(), res["search"].to_numpy()),
         "ci_low": lo, "ci_high": hi,
         "p_shift": shift_pvalue(res["pm25_mean"], res["search"]),
-        "peak_lag": int(lags.idxmax()),
+        "peak_lag": F.peak_lag(lags),
     }
 
 
@@ -82,10 +82,12 @@ def correlation_table(long):
     summ = F.series_summary(long)
     rows = []
     for city in CITIES:
-        rows.append(_series_row(city, "attention index (PC1)", F.attention_pair(long, city)))
+        rows.append(_series_row(city, F.ATTENTION, F.attention_pair(long, city), role="attention"))
         for _, s in summ[(summ["city"] == city) & summ["dense"]].iterrows():
-            rows.append(_series_row(city, s["label"], F.pair(long, city, s["term"], s["geo_level"])))
+            rows.append(_series_row(city, s["label"], F.pair(long, city, s["term"], s["geo_level"]), role=s["role"],
+                                    term=s["term"], geo_level=s["geo_level"], zero_share=s["zero_share"]))
     out = pd.DataFrame(rows)
+    out["peak_lag"] = out["peak_lag"].astype("Int64")
     out["p_fdr"] = bh_adjust(out["p_shift"])
     out["significant"] = out["p_fdr"] < 0.05
     return out

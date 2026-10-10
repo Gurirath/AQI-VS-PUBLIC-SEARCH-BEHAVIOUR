@@ -7,6 +7,7 @@ from .config import (BASELINE_TERMS, HEADLINE_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE
                      default_geo_level, health_terms)
 
 WEEK = "7D"
+ATTENTION = "attention index (PC1)"
 
 
 def load_long():
@@ -36,8 +37,9 @@ def headline(long, city, role="awareness"):
 
 
 def series_summary(long):
-    g = long.groupby(["city", "geo_level", "term"])["search"]
-    out = g.agg(weeks="size", zero_share=lambda s: (s == 0).mean()).reset_index()
+    g = long.groupby(["city", "geo_level", "term"])
+    out = g.agg(role=("role", "first"), weeks=("search", "size"),
+                zero_share=("search", lambda s: (s == 0).mean())).reset_index()
     out["label"] = [term_label(c, t, g) for c, t, g in zip(out["city"], out["term"], out["geo_level"])]
     out["dense"] = out["zero_share"] <= MAX_ZERO_SHARE
     return out
@@ -77,6 +79,11 @@ def lag_correlation(d, max_lag=8):
     return pd.Series({k: d["search"].shift(-k).corr(d["pm25_mean"]) for k in range(-max_lag, max_lag + 1)})
 
 
+def peak_lag(profile):
+    peak = int(profile.idxmax())
+    return None if peak in (profile.index.min(), profile.index.max()) else peak
+
+
 def rolling_correlation(d, window=26, min_periods=20):
     return d["pm25_mean"].rolling(window, min_periods=min_periods).corr(d["search"])
 
@@ -97,3 +104,14 @@ def attention_pair(long, city):
     idx, _ = attention_index(long, city)
     idx["search"] = (idx["attention"] - idx["attention"].mean()) / idx["attention"].std()
     return idx[["pm25_mean", "search"]].asfreq(WEEK)
+
+
+def role_pair(long, city, role="attention"):
+    if role == "attention":
+        return attention_pair(long, city)
+    d = headline(long, city, role)
+    return d.assign(search=(d["search"] - d["search"].mean()) / d["search"].std())
+
+
+def role_label(city, role="attention"):
+    return ATTENTION if role == "attention" else term_label(city, HEADLINE_TERMS[city][role])

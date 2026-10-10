@@ -11,7 +11,7 @@ EPISODE_Z = 2.0
 EPISODE_QUIET = 3
 WINDOW = (-4, 8)
 HIGH_QUANTILE = 2 / 3
-SEASON_START = {"bangkok": 7, "krakow": 7, "melbourne": 1}
+SEASON_START = {"bangkok": 7, "krakow": 7, "melbourne": 1, "lahore": 10}
 
 
 def _hac(y, X):
@@ -137,10 +137,10 @@ def silent_weeks(d, city, n_boot=2000, block=8, seed=RNG_SEED):
                 "silent_share_early": high.loc[~late, "silent"].mean(), "silent_share_late": high.loc[late, "silent"].mean()}
 
 
-def scorecard(long):
+def scorecard(long, role="attention"):
     rows = []
     for city in CITIES:
-        d = F.attention_pair(long, city)
+        d = F.role_pair(long, city, role)
         ls, th, ep, hb = level_vs_surprise(d), attention_threshold(d), episode_response(d)["summary"], habituation(d, city)
         _, sw = silent_weeks(d, city)
         rows.append({
