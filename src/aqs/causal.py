@@ -1,4 +1,3 @@
-"""Directional tests and out-of-sample prediction."""
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -17,24 +16,18 @@ PM_FEATURES = ["pm25", "pm25_lag1", "pm25_lag2", "pm25_lag3", "pm25_lag4", "pm25
 SEASON_FEATURES = ["month_sin", "month_cos"]
 
 
-def stationarity_table(long):
-    """ADF test on both series, before and after the season is removed."""
+def stationarity_table(long, role="attention"):
     rows = []
     for city in CITIES:
-        d = F.attention_pair(long, city)
+        d = F.role_pair(long, city, role)
         for label, frame in [("raw", d), ("season removed", deseasonalize(d))]:
-            for col, name in [("pm25_mean", "PM2.5"), ("search", "attention")]:
+            for col, name in [("pm25_mean", "PM2.5"), ("search", role)]:
                 p = adfuller(frame[col].dropna())[1]
                 rows.append({"city": city, "series": name, "version": label, "adf_p": p, "stationary": p < 0.05})
     return pd.DataFrame(rows)
 
 
 def granger(d, cause, effect, lags):
-    """Does the past of `cause` improve a forecast of `effect` beyond effect's own past?
-
-    Fitted directly as a lagged regression on the regular weekly index, so a
-    week is used only when all of its lags exist; nothing is interpolated
-    across gaps and both series get the same treatment."""
     df = pd.DataFrame({"y": d[effect]})
     for k in range(1, lags + 1):
         df[f"own{k}"] = d[effect].shift(k)
@@ -48,14 +41,12 @@ def granger(d, cause, effect, lags):
     return {"weeks": len(df), "F": f, "p": p}
 
 
-def granger_table(long):
-    """Both directions, lags 1-4, on seasonal residuals, FDR-adjusted across all tests.
-    The reverse direction (search -> PM2.5) is a placebo: searching cannot change the air."""
+def granger_table(long, role="attention"):
     rows = []
     for city in CITIES:
-        res = deseasonalize(F.attention_pair(long, city))
-        for direction, cause, effect in [("PM2.5 → attention", "pm25_mean", "search"),
-                                         ("attention → PM2.5 (placebo)", "search", "pm25_mean")]:
+        res = deseasonalize(F.role_pair(long, city, role))
+        for direction, cause, effect in [(f"PM2.5 → {role}", "pm25_mean", "search"),
+                                         (f"{role} → PM2.5 (placebo)", "search", "pm25_mean")]:
             for lags in range(1, MAX_LAG + 1):
                 rows.append({"city": city, "direction": direction, "lags": lags, **granger(res, cause, effect, lags)})
     out = pd.DataFrame(rows)
@@ -65,7 +56,6 @@ def granger_table(long):
 
 
 def model_frame(d):
-    """Features on the regular index, so a lag never reaches across a gap."""
     df = pd.DataFrame({"attention": d["search"], "pm25": d["pm25_mean"]})
     for k in range(1, 5):
         df[f"pm25_lag{k}"] = d["pm25_mean"].shift(k)
@@ -76,7 +66,6 @@ def model_frame(d):
 
 
 def out_of_fold(df, features, params=RF_PARAMS, splits=5):
-    """Predictions for each week from a model trained only on earlier weeks."""
     pred = pd.Series(np.nan, index=df.index)
     for train, test in TimeSeriesSplit(n_splits=splits).split(df):
         rf = RandomForestRegressor(**params).fit(df.iloc[train][features], df.iloc[train]["attention"])
@@ -84,12 +73,10 @@ def out_of_fold(df, features, params=RF_PARAMS, splits=5):
     return pred.dropna()
 
 
-def forecast_skill(long, depths=(2, 4, 6)):
-    """Out-of-sample skill of a calendar-only model against calendar + PM2.5.
-    R² is pooled over all held-out weeks; the gain is what PM2.5 adds."""
+def forecast_skill(long, depths=(2, 4, 6), role="attention"):
     rows, preds = [], {}
     for city in CITIES:
-        df = model_frame(F.attention_pair(long, city))
+        df = model_frame(F.role_pair(long, city, role))
         row = {"city": city, "weeks": len(df)}
         for name, feats in [("calendar", SEASON_FEATURES), ("calendar_pm25", SEASON_FEATURES + PM_FEATURES)]:
             pred = out_of_fold(df, feats)
@@ -110,14 +97,32 @@ def forecast_skill(long, depths=(2, 4, 6)):
     return pd.DataFrame(rows).set_index("city"), preds
 
 
-def verdicts(corr, grang, skill, card):
-    """Per-city verdict assembled from computed results (nothing typed in by hand)."""
+def series_skill(long):
+    summ = F.series_summary(long)
     rows = []
     for city in CITIES:
-        c = corr[(corr["city"] == city) & (corr["series"] == "attention index (PC1)")].iloc[0]
+        series = [({"series": F.ATTENTION, "role": "attention"}, F.attention_pair(long, city))]
+        for _, s in summ[(summ["city"] == city) & summ["dense"]].iterrows():
+            series.append(({"series": s["label"], "role": s["role"], "term": s["term"], "geo_level": s["geo_level"]},
+                           F.pair(long, city, s["term"], s["geo_level"])))
+        for meta, d in series:
+            df = model_frame(d)
+            row = {"city": city, **meta, "weeks": len(df)}
+            for name, feats in [("calendar", SEASON_FEATURES), ("calendar_pm25", SEASON_FEATURES + PM_FEATURES)]:
+                pred = out_of_fold(df, feats)
+                row[f"r2_{name}"] = r2_score(df.loc[pred.index, "attention"], pred)
+            row["r2_gain_from_pm25"] = row["r2_calendar_pm25"] - row["r2_calendar"]
+            rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def verdicts(corr, grang, skill, card, role="attention"):
+    rows = []
+    for city in CITIES:
+        c = corr[(corr["city"] == city) & (corr["series"] == F.role_label(city, role))].iloc[0]
         g = grang[grang["city"] == city]
-        fwd = g[g["direction"].str.startswith("PM2.5")]
-        rev = g[g["direction"].str.startswith("attention")]
+        forward = g["direction"].str.startswith("PM2.5")
+        fwd, rev = g[forward], g[~forward]
         rows.append({
             "city": city,
             "deseason_r": c["deseason_r"], "correlation_survives": bool(c["significant"]),

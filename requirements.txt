@@ -8,6 +8,6 @@ scikit-learn
 matplotlib
 plotly
 streamlit
-trendspyg
+trendspyg>=1.9.0
 jupyter
 certifi
