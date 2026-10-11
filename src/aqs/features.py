@@ -3,11 +3,12 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from statsmodels.tsa.seasonal import STL
 
-from .config import (BASELINE_TERMS, HEADLINE_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE, PROCESSED, INTERIM,
-                     default_geo_level, health_terms)
+from .config import (BASELINE_TERMS, CITIES, HEADLINE_TERMS, HEALTH_TERMS, LOCAL_TERMS, MAX_ZERO_SHARE, PROCESSED,
+                     INTERIM, default_geo_level, health_terms)
 
 WEEK = "7D"
 ATTENTION = "attention index (PC1)"
+ROLE_ORDER = ("attention", "awareness", "protection", "health")
 
 
 def load_long():
@@ -24,6 +25,25 @@ def term_label(city, term, geo_level=None):
         return local[term]
     geo_level = geo_level or default_geo_level(city, term)
     return f"{BASELINE_TERMS[term]} (English, {geo_level})"
+
+
+def series_slot(city, term, geo_level):
+    if term in BASELINE_TERMS:
+        return f"{BASELINE_TERMS[term]} (English, {geo_level})"
+    for t in HEALTH_TERMS:
+        if term == t["key"]:
+            return f"{t['keyword']} (English)"
+        if term.startswith(f"{t['key']}_"):
+            return f"{t['keyword']} (local language)"
+    return next(t["slot"] for t in LOCAL_TERMS[city] if t["key"] == term)
+
+
+def slot_matrix(table, value):
+    slots = [ATTENTION if r == "attention" else series_slot(c, t, g)
+             for c, r, t, g in zip(table["city"], table["role"], table["term"], table["geo_level"])]
+    wide = table.assign(slot=slots).pivot(index=["role", "slot"], columns="city", values=value)
+    order = sorted(wide.index, key=lambda i: (ROLE_ORDER.index(i[0]), i[1].lower()))
+    return wide.reindex(index=order, columns=list(CITIES))
 
 
 def pair(long, city, term, geo_level=None):

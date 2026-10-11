@@ -9,6 +9,7 @@ from . import stats as S
 from .config import CITIES, PROCESSED
 
 ROLES = ("attention", "health")
+SAVED = ("results_summary", "awareness_scorecard", "verdicts")
 
 
 def _stack(frames):
@@ -20,24 +21,27 @@ def _stack(frames):
 
 def build(long):
     corr = S.correlation_table(long)
-    cards, grangers, skills, verdicts = {}, {}, {}, {}
+    cards, grangers, skills, verdicts, predictions = {}, {}, {}, {}, {}
     for role in ROLES:
         cards[role] = A.scorecard(long, role)
         grangers[role] = C.granger_table(long, role)
-        skills[role] = C.forecast_skill(long, role=role)[0]
+        skills[role], predictions[role] = C.forecast_skill(long, role=role)
         verdicts[role] = C.verdicts(corr, grangers[role], skills[role], cards[role], role)
     return {"results_summary": corr, "awareness_scorecard": _stack(cards), "verdicts": _stack(verdicts),
             "granger": pd.concat(grangers, names=["role"]).reset_index(level=0).reset_index(drop=True),
-            "forecast_skill": _stack(skills)}
+            "forecast_skill": _stack(skills), "predictions": predictions}
+
+
+def write(tables):
+    for name in SAVED:
+        tables[name].to_csv(PROCESSED / f"{name}.csv", index=False)
+        print(f"{name}.csv: {len(tables[name])} rows")
+    return tables
 
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    tables = build(F.load_long())
-    for name in ["results_summary", "awareness_scorecard", "verdicts"]:
-        tables[name].to_csv(PROCESSED / f"{name}.csv", index=False)
-        print(f"{name}.csv: {len(tables[name])} rows")
-    return tables
+    return write(build(F.load_long()))
 
 
 if __name__ == "__main__":

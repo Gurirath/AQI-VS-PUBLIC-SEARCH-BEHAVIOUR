@@ -44,15 +44,10 @@ def dry_run(cities):
           f"(plus {COOLDOWN_S // 60} min for each rate-limit refusal)")
 
 
-def main(argv):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    cities = [a for a in argv if not a.startswith("--")] or list(CITIES)
-    if "--dry-run" in argv:
-        dry_run(cities)
-        return
+def collect(cities=None):
     RAW_TRENDS.mkdir(parents=True, exist_ok=True)
     failed = []
-    for city, geo, key, keyword, out in missing_series(cities):
+    for city, geo, key, keyword, out in missing_series(cities or list(CITIES)):
         print(f"{city} {geo} '{keyword}'...", end=" ", flush=True)
         try:
             points = download_google_trends_interest_over_time(
@@ -71,6 +66,16 @@ def main(argv):
             failed.append(out.name)
             print(f"FAILED ({type(e).__name__}: {str(e).splitlines()[0]})", flush=True)
         time.sleep(PAUSE_S)
+    return failed
+
+
+def main(argv):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    cities = [a for a in argv if not a.startswith("--")] or list(CITIES)
+    if "--dry-run" in argv:
+        dry_run(cities)
+        return
+    failed = collect(cities)
     if failed:
         print(f"\n{len(failed)} series failed, re-run to retry: {failed}")
         sys.exit(1)

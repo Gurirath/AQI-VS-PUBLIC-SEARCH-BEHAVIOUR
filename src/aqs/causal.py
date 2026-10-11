@@ -16,12 +16,12 @@ PM_FEATURES = ["pm25", "pm25_lag1", "pm25_lag2", "pm25_lag3", "pm25_lag4", "pm25
 SEASON_FEATURES = ["month_sin", "month_cos"]
 
 
-def stationarity_table(long):
+def stationarity_table(long, role="attention"):
     rows = []
     for city in CITIES:
-        d = F.attention_pair(long, city)
+        d = F.role_pair(long, city, role)
         for label, frame in [("raw", d), ("season removed", deseasonalize(d))]:
-            for col, name in [("pm25_mean", "PM2.5"), ("search", "attention")]:
+            for col, name in [("pm25_mean", "PM2.5"), ("search", role)]:
                 p = adfuller(frame[col].dropna())[1]
                 rows.append({"city": city, "series": name, "version": label, "adf_p": p, "stationary": p < 0.05})
     return pd.DataFrame(rows)
@@ -95,6 +95,25 @@ def forecast_skill(long, depths=(2, 4, 6), role="attention"):
         preds[(city, "actual")] = df["attention"]
         rows.append(row)
     return pd.DataFrame(rows).set_index("city"), preds
+
+
+def series_skill(long):
+    summ = F.series_summary(long)
+    rows = []
+    for city in CITIES:
+        series = [({"series": F.ATTENTION, "role": "attention"}, F.attention_pair(long, city))]
+        for _, s in summ[(summ["city"] == city) & summ["dense"]].iterrows():
+            series.append(({"series": s["label"], "role": s["role"], "term": s["term"], "geo_level": s["geo_level"]},
+                           F.pair(long, city, s["term"], s["geo_level"])))
+        for meta, d in series:
+            df = model_frame(d)
+            row = {"city": city, **meta, "weeks": len(df)}
+            for name, feats in [("calendar", SEASON_FEATURES), ("calendar_pm25", SEASON_FEATURES + PM_FEATURES)]:
+                pred = out_of_fold(df, feats)
+                row[f"r2_{name}"] = r2_score(df.loc[pred.index, "attention"], pred)
+            row["r2_gain_from_pm25"] = row["r2_calendar_pm25"] - row["r2_calendar"]
+            rows.append(row)
+    return pd.DataFrame(rows)
 
 
 def verdicts(corr, grang, skill, card, role="attention"):
