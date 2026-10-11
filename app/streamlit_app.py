@@ -42,6 +42,14 @@ def verdicts():
     return v[v["role"] == "attention"].set_index("city")
 
 
+def health_summary():
+    t = correlations()
+    health = t[t["role"] == "health"]
+    worst = health.assign(drop=health["raw_r"] - health["deseason_r"]).sort_values("drop").iloc[-1]
+    return {"series": len(health), "significant": int(health["significant"].sum()), "city": NAME[worst["city"]],
+            "label": worst["series"].split(" (")[0], "raw": worst["raw_r"], "deseason": worst["deseason_r"]}
+
+
 @st.cache_data
 def series_options(city):
     summ = F.series_summary(load()[0])
@@ -74,7 +82,7 @@ def style(fig, height=340, legend=False):
 
 
 def show(fig):
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
 
 def timeline_chart(d, city, search_label, pm_label):
@@ -228,12 +236,23 @@ def page_overview():
                "Black: polluted, but search stayed below its usual level. Pale: ordinary week. Blank: no PM2.5 data.")
     show(silent_chart())
     st.subheader("What we found")
+    h = health_summary()
     st.markdown(
-        "- **Search responds in the same week** as pollution in Bangkok and Kraków, and the response fades within about two weeks.\n"
-        "- **The relationship survives removing the shared season** in both cities, so it is more than two series peaking in the same months.\n"
-        "- **Bangkok and Kraków differ over a season:** attention builds through Bangkok's smog season and wears out through Kraków's.\n"
+        "- **Attention survives removing the shared season** in Bangkok, Kraków and Lahore, so it is more than two series "
+        "peaking in the same months. Lahore's estimate rests on one monitor and has a very wide interval.\n"
+        "- **Health searches follow the season, not the air.** "
+        f"{h['city']} \"{h['label']}\" correlates with PM2.5 at {h['raw']:+.2f} raw and {h['deseason']:+.2f} with the season "
+        f"removed, and {h['significant']} of {h['series']} health series stay significant. Most health series show no raw "
+        "correlation to begin with.\n"
+        "- **Search responds in the same week** as pollution in Bangkok and Kraków and within a week in Lahore, and the "
+        "response fades within a week or two.\n"
+        "- **The cities differ over a season:** attention builds through Bangkok's smog season and wears out through "
+        "Kraków's; Lahore leans towards wearing out.\n"
         "- **Melbourne shows nothing**, because its air is almost always under the WHO guideline: there is little to notice.\n"
-        "- **Past pollution does not forecast future attention** (Granger tests), because the response is faster than one week.")
+        "- **Past pollution does not forecast future attention** (Granger tests), because the response is faster than one week.\n"
+        "- **No switch-on level is established.** Lahore's flat-then-rising fit is weakly identified.")
+    st.caption("The card label is computed: not informative if the correlation does not survive the season, a reliable "
+               "proxy if PM2.5 adds more than 0.05 R² to a calendar forecast, otherwise real but mostly seasonal.")
 
 
 def page_explore(city):
@@ -281,8 +300,11 @@ def page_gap(city):
         st.subheader("Is there a switch-on level?")
         th = A.attention_threshold(d)
         better = "better than" if th["aic_gain_vs_linear"] > 2 else "no better than"
+        span = d["pm25_mean"].max() - d["pm25_mean"].min()
+        weak = th["aic_gain_vs_linear"] > 2 and th["high"] - th["low"] > span / 2
         st.caption(f"Large dots are medians of eight pollution bands. The flat-then-rising fit is {better} a straight line "
-                   f"(best switch-on {th['threshold']:.0f} µg/m³, 95% interval {th['low']:.0f}–{th['high']:.0f}).")
+                   f"(best switch-on {th['threshold']:.0f} µg/m³, 95% interval {th['low']:.0f}–{th['high']:.0f})."
+                   + (" The interval covers most of the observed range, so the switch-on point is weakly identified." if weak else ""))
         show(dose_chart(d, th, city))
     with right:
         st.subheader("How fast, and for how long?")
@@ -310,7 +332,7 @@ def page_gap(city):
         "Polluted weeks unnoticed": sc["silent_share"].map("{:.0%}".format),
     }).T
     table.columns = [NAME[c] for c in table.columns]
-    st.dataframe(table, use_container_width=True)
+    st.dataframe(table, width="stretch")
 
 
 def page_data(city):
@@ -324,7 +346,7 @@ def page_data(city):
     q["weeks with data"] = pm25.groupby("city").size()
     q["median PM2.5 (µg/m³)"] = pm25.groupby("city")["pm25_mean"].median().round(1)
     q.index = [NAME[c] for c in q.index]
-    st.dataframe(q.rename(columns={"candidates": "sensors found", "kept": "sensors kept"}), use_container_width=True)
+    st.dataframe(q.rename(columns={"candidates": "sensors found", "kept": "sensors kept"}), width="stretch")
     st.subheader(f"Usable search series — {NAME[city]}")
     st.caption("Grey series are zero in more than half of all weeks and are left out.")
     show(zero_chart(city))
@@ -332,8 +354,10 @@ def page_data(city):
     st.markdown(
         "- **PM2.5:** OpenAQ, every reference-grade monitor within 25 km with data on at least half the study days; "
         "daily median across monitors, averaged to Sunday–Saturday weeks.\n"
-        "- **Search:** Google Trends, weekly, for each city's own region, in English and the local language.\n"
-        "- **Attention index:** the first principal component of a city's usable search series.\n"
+        "- **Search:** Google Trends, weekly, for each city's own region, in English and the local language. "
+        "Health terms are country level, as are Lahore's English baseline terms.\n"
+        "- **Attention index:** the first principal component of a city's usable awareness and protection series. "
+        "Health terms are kept out of it.\n"
         "- **Removing the season:** a fit of trend plus annual sine waves is subtracted from each series.\n"
         "- **Uncertainty:** block bootstrap and circular-shift tests, which allow for neighbouring weeks being alike; "
         "p-values adjusted for multiple tests.")
@@ -342,7 +366,10 @@ def page_data(city):
         "- Three years of weekly data: five or six pollution episodes and three seasons per city.\n"
         "- The response is faster than a week, so weekly data cannot show which comes first.\n"
         "- Google Trends is a relative index: patterns can be compared between cities, levels cannot.\n"
-        "- Melbourne is missing about a year of PM2.5; Kraków rests on two monitors and Lahore on one.")
+        "- Melbourne is missing about a year of PM2.5; Kraków rests on two monitors and Lahore on one.\n"
+        "- Lahore's missing weeks cluster in 2022 Q3 to 2023 Q1 and remove 10 of the 22 weeks of the 2022–23 smog season.\n"
+        "- Health terms are measured for the whole country against one city's PM2.5, so a local health response would be diluted.\n"
+        "- Google Trends values differ slightly between pulls.")
 
 
 PAGES = {"Overview": lambda c: page_overview(), "Explore a city": page_explore,

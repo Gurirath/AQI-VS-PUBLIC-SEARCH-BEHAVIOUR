@@ -593,7 +593,7 @@ def dose_response(long):
         ax.set_title(CITY_NAME[city])
         ax.set_xlabel("weekly PM2.5 (µg/m³)")
         ax.set_ylabel("attention index (SD)")
-    return finish(fig, "Attention rises with pollution; only Lahore shows a switch-on level, and its position is uncertain",
+    return finish(fig, "Attention rises with pollution; a switch-on level is weakly identified in Lahore and absent elsewhere",
                   "Large dots: median attention in eight equal-sized pollution bands. Black: fitted flat-then-rising line. "
                   "Grey band: uncertainty in the switch-on point.",
                   "gap_dose_response")

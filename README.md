@@ -11,6 +11,13 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+```
+
 Put an OpenAQ API key in `.env` (not tracked):
 
 ```
@@ -25,6 +32,17 @@ Run from the repo root with `PYTHONPATH=src`.
 PYTHONPATH=src .venv/bin/python -m aqs.collect_openaq   # daily PM2.5, every sensor within 25 km
 PYTHONPATH=src .venv/bin/python -m aqs.collect_trends   # weekly search interest (drives Chrome; slow)
 PYTHONPATH=src .venv/bin/python -m aqs.cleaning         # filter, align weeks, merge
+PYTHONPATH=src .venv/bin/python -m aqs.results          # results_summary, awareness_scorecard, verdicts
+```
+
+Windows PowerShell sets the variable first and then runs the same modules:
+
+```powershell
+$env:PYTHONPATH = "src"
+.venv\Scripts\python -m aqs.collect_openaq
+.venv\Scripts\python -m aqs.collect_trends
+.venv\Scripts\python -m aqs.cleaning
+.venv\Scripts\python -m aqs.results
 ```
 
 Both collectors skip files that already exist, so they can be re-run after a
@@ -46,13 +64,15 @@ the interpretation is in `outputs/report/findings.md`.
 | `06_causal_ml_verdict.ipynb` | Granger tests, forecast skill for attention and health, scorecard and verdict tables |
 | `07_health_signal.ipynb` | Health searches against PM2.5: the seasonality confound, role contrast, cascade, year by year |
 
-`PYTHONPATH=src python -m aqs.results` rebuilds the three result tables without the notebooks.
+The notebooks add `../src` to the path themselves, so they need no `PYTHONPATH`.
 
 ## Dashboard
 
 ```bash
 .venv/bin/streamlit run app/streamlit_app.py
 ```
+
+Windows PowerShell: `.venv\Scripts\streamlit run app/streamlit_app.py`
 
 Four pages: overview and verdicts, an interactive city explorer (choose a search
 series, remove the season, shift the lag), the Awareness Gap, and data and
