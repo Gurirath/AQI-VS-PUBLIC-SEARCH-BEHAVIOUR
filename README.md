@@ -2,7 +2,7 @@
 
 Does PM2.5 pollution show up in what people search for, and when does the public
 stop noticing? Weekly PM2.5 (OpenAQ) against Google Trends search interest for
-Bangkok, Kraków and Melbourne, 2022–2024.
+Bangkok, Kraków, Melbourne and Lahore, 2022–2024.
 
 ## Setup
 
@@ -33,18 +33,20 @@ tracked tables in `data/interim/` and `data/processed/`.
 
 ## Running the analysis
 
-Notebooks 05–08 are the current analysis. Each runs top to bottom from the tracked data.
+The seven notebooks run in order, top to bottom. They contain code and saved outputs only;
+the interpretation is in `outputs/report/findings.md`.
 
 | Notebook | What it does |
 |---|---|
-| `05_eda.ipynb` | Data quality, distributions, seasonality, correlation, PCA, clustering |
-| `06_statistics.ipynb` | Correlations with the season removed, bootstrap intervals, corrected p-values |
-| `07_awareness_gap.ipynb` | When attention responds, how fast, whether it wears out, and silent pollution weeks |
-| `08_causal_and_verdict.ipynb` | Granger tests in both directions, forecast skill, per-city verdict |
+| `01_data_collection.ipynb` | Calls the collectors (skipping files that exist), counts sensors and search series per city |
+| `02_cleaning_merge.ipynb` | Runs `aqs.cleaning`, sensor selection, weekly coverage, merged table |
+| `03_eda.ipynb` | Data quality, distributions, seasonality, correlation, PCA, clustering |
+| `04_statistics.ipynb` | Correlations with the season removed for every dense series, peak lag per term |
+| `05_awareness_gap.ipynb` | When attention responds, how fast, lag asymmetry, whether it wears out, silent weeks |
+| `06_causal_ml_verdict.ipynb` | Granger tests, forecast skill for attention and health, scorecard and verdict tables |
+| `07_health_signal.ipynb` | Health searches against PM2.5: the seasonality confound, role contrast, cascade, year by year |
 
-Notebooks 01–04 are the first iteration and are kept for reference. They used
-misaligned weeks and are superseded by `src/aqs` and notebooks 05–08; 02 no
-longer runs against the current raw files.
+`PYTHONPATH=src python -m aqs.results` rebuilds the three result tables without the notebooks.
 
 ## Dashboard
 
@@ -60,12 +62,13 @@ methods. It reads only the tracked tables, so it needs no API key.
 
 | Path | Contents |
 |---|---|
-| `src/aqs/` | `config`, collectors, `cleaning`, `features`, `stats`, `awareness`, `causal`, `plots` |
+| `src/aqs/` | `config`, collectors, `cleaning`, `features`, `stats`, `awareness`, `causal`, `health`, `results`, `plots` |
 | `notebooks/` | analysis notebooks |
 | `app/` | Streamlit dashboard |
 | `data/interim/` | weekly PM2.5, weekly search series, sensor selection log |
 | `data/processed/` | merged tables, `results_summary.csv`, `awareness_scorecard.csv`, `verdicts.csv` |
-| `outputs/figures/` | saved figures (`eda_`, `stats_`, `gap_`, `causal_` prefixes are current) |
+| `outputs/figures/` | saved figures, prefixed `eda_`, `stats_`, `gap_`, `causal_`, `health_` by notebook |
+| `outputs/report/findings.md` | interpretation of every notebook, with limitations |
 
 ## Data conventions
 
@@ -73,4 +76,5 @@ methods. It reads only the tracked tables, so it needs no API key.
 - PM2.5 uses reference-grade monitors present for at least half the study window;
   `data/interim/sensor_selection.csv` lists every candidate sensor and why it was kept or dropped.
 - Search interest is pulled for the city's own region (Bangkok `TH-10`, Małopolskie `PL-MA`,
-  Victoria `AU-VIC`) in both English and the local language.
+  Victoria `AU-VIC`, Punjab `PK-PB`) in both English and the local language. Health terms are pulled at
+  country level, as are Lahore's English baseline terms.

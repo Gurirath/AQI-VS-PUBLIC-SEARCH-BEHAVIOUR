@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +20,9 @@ CITY_COLOR = {city: cfg["color"] for city, cfg in CITIES.items()}
 CITY_NAME = {city: cfg["name"] for city, cfg in CITIES.items()}
 PM_COLOR = INK2
 EMPTY = "#f0efec"
+ROLE_NOUN = {"attention": "attention", "health": "health search"}
+ROLE_SUFFIX = {"attention": "", "health": "_health"}
+ROLE_MARKER = {"awareness": "o", "protection": "s", "health": "D"}
 
 SEQ_BLUE = LinearSegmentedColormap.from_list("seq_blue", ["#cde2fb", "#6da7ec", "#256abf", "#0d366b"])
 SEQ_ORANGE = LinearSegmentedColormap.from_list("seq_orange", ["#fbe0d3", "#f1946c", "#c9501f", "#7a2c0c"])
@@ -27,6 +32,7 @@ for _cm in (SEQ_BLUE, SEQ_ORANGE, DIVERGING):
 
 
 def use_theme():
+    logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
     mpl.rcParams.update({
         "figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
         "font.family": ["Helvetica Neue", "Arial", "DejaVu Sans"], "font.size": 9.5,
@@ -261,12 +267,12 @@ def autocorrelation(long, nlags=60):
             else:
                 ax.set_xlabel("lag (weeks)")
     axes[0][0].text(52, axes[0][0].get_ylim()[1], "one year ", ha="right", va="top", fontsize=8.5, color=INK)
-    return finish(fig, "Bangkok and Kraków carry a strong annual cycle; Melbourne does not",
+    return finish(fig, "Bangkok and Lahore carry a strong annual cycle, Kraków a weaker one; Melbourne has none",
                   "Bars outside the grey band are distinguishable from zero. Neighbouring weeks are not independent observations.",
                   "eda_autocorrelation")
 
 
-def stl_decomposition(long, cities=("bangkok", "krakow")):
+def stl_decomposition(long, cities=("bangkok", "krakow", "lahore")):
     fig, axes = plt.subplots(4, 2 * len(cities), figsize=(6.2 * len(cities), 7.4), sharex=True)
     for c, city in enumerate(cities):
         d = F.headline(long, city)
@@ -301,7 +307,7 @@ def scatter_lowess(long):
         ax.set_title(CITY_NAME[city])
         ax.set_xlabel("weekly PM2.5 (µg/m³)")
         ax.set_ylabel(f"search: {F.term_label(city, F.HEADLINE_TERMS[city]['awareness'])}")
-    return finish(fig, "Search climbs with pollution in Bangkok and Kraków; Melbourne shows no clear relationship",
+    return finish(fig, "Search climbs with pollution in Bangkok, Kraków and Lahore; Melbourne shows no clear relationship",
                   "Black line is a LOWESS smooth: it follows the data without assuming a linear relationship.",
                   "eda_scatter_lowess")
 
@@ -348,7 +354,7 @@ def rolling_correlations(long, window=26):
     ax.set_ylim(-1, 1)
     ax.set_ylabel(f"{window}-week rolling correlation")
     ax.legend(loc="lower left", ncols=len(CITIES))
-    return finish(fig, "The pollution–search link is strong in Bangkok and Kraków, but not constant",
+    return finish(fig, "The pollution–search link is strong in Bangkok, Kraków and Lahore, but not constant",
                   "Rolling Pearson correlation between PM2.5 and each city's headline search term. Breaks are data gaps.",
                   "eda_rolling_correlation")
 
@@ -418,7 +424,7 @@ def pca_summary(long):
         _note(ax, f"r = {idx.corr().iat[0, 1]:.2f}", "upper left")
         ax.set_xlabel("weekly PM2.5 (µg/m³)")
         ax.set_ylabel("attention index (PC1)")
-    return finish(fig, "In Bangkok and Kraków one 'attention' signal sits behind the separate search terms",
+    return finish(fig, "In Bangkok, Kraków and Lahore one 'attention' signal sits behind the separate search terms",
                   "PCA on each city's standardised search series. Bottom row: the first component against PM2.5.",
                   "eda_pca")
 
@@ -451,29 +457,86 @@ def regimes(long, k=3):
     return fig, out
 
 
-def raw_vs_deseasonalized(table):
-    fig, axes = _city_axes(height=3.6, sharex=True)
-    for ax, city in zip(axes[0], CITIES):
-        d = table[table["city"] == city].sort_values("deseason_r")
-        y = np.arange(len(d))
-        ax.hlines(y, d["ci_low"], d["ci_high"], color=CITY_COLOR[city], linewidth=2, alpha=0.45)
-        ax.scatter(d["raw_r"], y, s=46, facecolor=SURFACE, edgecolor=INK2, linewidth=1.6, zorder=3)
-        ax.scatter(d["deseason_r"], y, s=52, color=CITY_COLOR[city], zorder=4)
-        ax.set_yticks(y, d["series"])
-        ax.axvline(0, color=INK, linewidth=1)
-        ax.set_xlim(-0.3, 1)
-        ax.set_title(CITY_NAME[city])
-        ax.set_xlabel("correlation with PM2.5")
-        ax.grid(axis="y", visible=False)
-        ax.tick_params(axis="y", length=0)
+def _grid_axes(height):
+    fig, axes = plt.subplots(2, 2, figsize=(14, height), squeeze=False)
+    return fig, axes.ravel()
+
+
+def _raw_legend(fig):
     proxies = [mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, markerfacecolor=SURFACE,
                                 markeredgecolor=INK2, markeredgewidth=1.6, label="raw"),
                mpl.lines.Line2D([], [], marker="o", linestyle="-", markersize=7, color=INK2,
                                 label="season removed, with 95% interval")]
     fig.legend(handles=proxies, loc="upper right", ncols=2)
-    return finish(fig, "Removing the shared season shrinks the correlation but does not erase it",
-                  "Hollow = raw. Filled = after a seasonal fit is subtracted from both series; bar = block-bootstrap 95% interval.",
+
+
+def _paired_rows(ax, d, city, labels, arrows=False):
+    y = np.arange(len(d))
+    ax.hlines(y, d["ci_low"], d["ci_high"], color=CITY_COLOR[city], linewidth=2, alpha=0.45)
+    if arrows:
+        for yi, raw, des in zip(y, d["raw_r"], d["deseason_r"]):
+            if abs(raw - des) > 0.06:
+                ax.annotate("", xy=(des, yi), xytext=(raw, yi),
+                            arrowprops=dict(arrowstyle="-|>", color=INK2, lw=1.1, shrinkA=5, shrinkB=5))
+            ax.text(1.02, yi, f"{raw:+.2f} → {des:+.2f}", transform=ax.get_yaxis_transform(), ha="left",
+                    va="center", fontsize=8.5, color=INK2)
+    ax.scatter(d["raw_r"], y, s=46, facecolor=SURFACE, edgecolor=INK2, linewidth=1.6, zorder=3)
+    ax.scatter(d["deseason_r"], y, s=52, color=CITY_COLOR[city], zorder=4)
+    ax.set_yticks(y, labels)
+    ax.set_ylim(-0.7, len(d) - 0.3)
+    ax.axvline(0, color=INK, linewidth=1)
+    ax.set_xlim(-0.5, 1)
+    ax.set_title(CITY_NAME[city])
+    ax.set_xlabel("correlation with PM2.5")
+    ax.grid(axis="y", visible=False)
+    ax.tick_params(axis="y", length=0)
+
+
+def raw_vs_deseasonalized(table):
+    rows = table.groupby("city").size().max()
+    fig, axes = _grid_axes(1.4 + 0.52 * rows)
+    for ax, city in zip(axes, CITIES):
+        d = table[table["city"] == city].sort_values("deseason_r")
+        _paired_rows(ax, d, city, [f"{s}  [{r}]" for s, r in zip(d["series"], d["role"])])
+    _raw_legend(fig)
+    return finish(fig, "Outside Melbourne, awareness and protection searches keep their link to PM2.5 without the season; health searches do not",
+                  "Hollow = raw. Filled = after a seasonal fit is subtracted from both series; bar = block-bootstrap 95% interval. "
+                  "Role in square brackets.",
                   "stats_raw_vs_deseasonalized")
+
+
+def term_lag_comparison(table, max_lag=8):
+    rows = table.groupby("city").size().max()
+    fig, axes = _grid_axes(1.4 + 0.5 * rows)
+    for ax, city in zip(axes, CITIES):
+        d = table[table["city"] == city]
+        d = d.iloc[np.argsort(d["role"].map(F.ROLE_ORDER.index).to_numpy(), kind="stable")[::-1]]
+        y = np.arange(len(d))
+        for yi, lag, sig in zip(y, d["peak_lag"], d["significant"]):
+            if pd.isna(lag):
+                ax.text(max_lag + 0.6, yi, "no peak", ha="right", va="center", fontsize=8.5, color=MUTED)
+                continue
+            ax.hlines(yi, 0, lag, color=CITY_COLOR[city], linewidth=2, alpha=0.45)
+            ax.scatter(lag, yi, s=52, zorder=3, linewidth=1.8, edgecolor=CITY_COLOR[city],
+                       facecolor=CITY_COLOR[city] if sig else SURFACE)
+        ax.set_yticks(y, [f"{s}  [{r}]" for s, r in zip(d["series"], d["role"])])
+        ax.set_ylim(-0.7, len(d) - 0.3)
+        ax.axvline(0, color=INK, linewidth=1)
+        ax.set_xlim(-max_lag - 0.8, max_lag + 0.8)
+        ax.set_xticks(range(-max_lag, max_lag + 1, 2))
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("← search first      peak lag (weeks)      search after →")
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+    proxies = [mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, color=INK2,
+                                label="correlation significant after correction"),
+               mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, markerfacecolor=SURFACE,
+                                markeredgecolor=INK2, markeredgewidth=1.8, label="not significant")]
+    fig.legend(handles=proxies, loc="upper right", ncols=2)
+    return finish(fig, "Every series that survives the season peaks in the same week, or one week after in Lahore",
+                  "Lag of the highest correlation between seasonal residuals. A maximum at the edge of the ±8-week "
+                  "window is reported as no peak. Role in square brackets.",
+                  "stats_term_lag_comparison")
 
 
 def deseasonalized_lags(long, max_lag=8):
@@ -486,7 +549,7 @@ def deseasonalized_lags(long, max_lag=8):
     ax.set_xlabel("← search first      lag (weeks)      search after →")
     ax.set_ylabel("correlation of seasonal residuals")
     ax.legend(loc="upper right")
-    return finish(fig, "With the season removed, the response is a sharp same-week peak",
+    return finish(fig, "With the season removed, Bangkok, Kraków and Lahore show a sharp same-week peak; Melbourne shows none",
                   "Attention index against PM2.5, both as residuals from a seasonal fit.",
                   "stats_deseasonalized_lags")
 
@@ -506,7 +569,7 @@ def level_vs_surprise_plot(long):
         ax.set_xlabel("attention (SD) per 10 µg/m³")
         ax.grid(axis="y", visible=False)
         ax.tick_params(axis="y", length=0)
-    return finish(fig, "In Bangkok and Kraków attention responds to pollution the calendar did not predict",
+    return finish(fig, "Bangkok and Kraków respond to pollution the calendar did not predict; Lahore and Melbourne are inconclusive",
                   "Regression of the attention index on both components at once. Bars are 95% intervals robust to autocorrelation.",
                   "gap_level_vs_surprise")
 
@@ -530,7 +593,7 @@ def dose_response(long):
         ax.set_title(CITY_NAME[city])
         ax.set_xlabel("weekly PM2.5 (µg/m³)")
         ax.set_ylabel("attention index (SD)")
-    return finish(fig, "Attention rises with pollution, but without a sharp switch-on level",
+    return finish(fig, "Attention rises with pollution; only Lahore shows a switch-on level, and its position is uncertain",
                   "Large dots: median attention in eight equal-sized pollution bands. Black: fitted flat-then-rising line. "
                   "Grey band: uncertainty in the switch-on point.",
                   "gap_dose_response")
@@ -619,7 +682,7 @@ def silent_strips(long):
     return fig
 
 
-def forecast_skill_plot(skill):
+def forecast_skill_plot(skill, role="attention"):
     fig, ax = plt.subplots(figsize=(8, 3.8))
     x = np.arange(len(CITIES))
     for i, city in enumerate(CITIES):
@@ -637,21 +700,233 @@ def forecast_skill_plot(skill):
     proxies = [mpl.patches.Patch(facecolor=AXIS, label="calendar only"),
                mpl.patches.Patch(facecolor=INK2, label="calendar + PM2.5 (city colour)")]
     ax.legend(handles=proxies, loc="upper right")
-    return finish(fig, "What PM2.5 adds to a forecast of attention",
+    return finish(fig, f"What PM2.5 adds to a forecast of {ROLE_NOUN[role]}",
                   "Random forest, each week predicted from a model trained only on earlier weeks. Below zero = worse than guessing the average.",
-                  "causal_forecast_skill")
+                  f"causal_forecast_skill{ROLE_SUFFIX[role]}")
 
 
-def forecast_timeline(preds):
+def forecast_timeline(preds, role="attention"):
     fig, axes = plt.subplots(len(CITIES), 1, figsize=(12, 0.4 + 2 * len(CITIES)), sharex=True)
     for ax, city in zip(axes, CITIES):
         pred = preds[(city, "calendar_pm25")].asfreq(F.WEEK)
         actual = preds[(city, "actual")].reindex(pred.index)
-        ax.plot(actual.index, actual, color=PM_COLOR, linewidth=1.4, label="actual attention")
+        ax.plot(actual.index, actual, color=PM_COLOR, linewidth=1.4, label=f"actual {ROLE_NOUN[role]}")
         ax.plot(pred.index, pred, color=CITY_COLOR[city], linewidth=2, label="predicted from calendar + PM2.5")
-        ax.set_ylabel("attention (SD)")
+        ax.set_ylabel(f"{ROLE_NOUN[role]} (SD)")
         ax.set_title(CITY_NAME[city])
         ax.legend(loc="upper left", ncols=2, fontsize=8.5)
-    return finish(fig, "Predicted against actual attention on weeks the model had not seen",
+    return finish(fig, f"Predicted against actual {ROLE_NOUN[role]} on weeks the model had not seen",
                   "Grey = what happened. Colour = forecast made using only earlier weeks.",
-                  "causal_forecast_timeline")
+                  f"causal_forecast_timeline{ROLE_SUFFIX[role]}")
+
+
+def lag_asymmetry_plot(long):
+    fig, axes = _city_axes(height=3.4)
+    for ax, city in zip(axes[0], CITIES):
+        res = A.lag_asymmetry(F.attention_pair(long, city))
+        for name, dx, face in [("rising", -0.09, CITY_COLOR[city]), ("falling", 0.09, SURFACE)]:
+            d = res[res["direction"] == name]
+            ax.vlines(d["horizon"] + dx, d["low"], d["high"], color=CITY_COLOR[city], linewidth=2, alpha=0.5)
+            ax.scatter(d["horizon"] + dx, d["mean"], s=56, facecolor=face, edgecolor=CITY_COLOR[city],
+                       linewidth=2, zorder=3)
+        gap = res[res["direction"] == "rising minus falling"].set_index("horizon")
+        clear = [h for h in gap.index if gap.loc[h, "low"] > 0 or gap.loc[h, "high"] < 0]
+        _note(ax, "gap clear of zero: " + (", ".join("same week" if h == 0 else f"+{h}w" for h in clear) or "never"),
+              "upper left")
+        ax.axhline(0, color=INK, linewidth=1)
+        ax.set_xticks(list(A.ASYMMETRY_HORIZONS), ["same week"] + [f"+{h}w" for h in A.ASYMMETRY_HORIZONS[1:]])
+        ax.set_xlim(-0.5, len(A.ASYMMETRY_HORIZONS) - 0.5)
+        ax.set_ylim(top=ax.get_ylim()[1] + 0.25 * np.ptp(ax.get_ylim()))
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("weeks after the change in PM2.5")
+        ax.set_ylabel("attention surprise (SD)")
+        ax.grid(axis="x", visible=False)
+    proxies = [mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, color=INK2, label="after PM2.5 rose"),
+               mpl.lines.Line2D([], [], marker="o", linestyle="", markersize=7, markerfacecolor=SURFACE,
+                                markeredgecolor=INK2, markeredgewidth=2, label="after PM2.5 fell")]
+    fig.legend(handles=proxies, loc="upper right", ncols=2)
+    return finish(fig, "Attention is higher after pollution rises than after it falls: at once in Bangkok and Kraków, a week later in Lahore",
+                  "Both series as surprises from a seasonal fit. Weeks are split by whether the PM2.5 surprise rose or fell "
+                  "from the week before; bars are block-bootstrap 95% intervals.",
+                  "gap_lag_asymmetry")
+
+
+def _slot_heatmap(ax, values, present, cmap, vmin, vmax, fmt, title, flags=None, missing=""):
+    layout = []
+    for role in F.ROLE_ORDER:
+        if role not in values.index.get_level_values("role"):
+            continue
+        if role != "attention":
+            layout.append((None, role))
+        layout += [((role, slot), slot) for slot in values.loc[role].index]
+    grid = np.full((len(layout), len(CITIES)), np.nan)
+    for i, (key, _) in enumerate(layout):
+        if key is not None:
+            grid[i] = values.loc[key].to_numpy(dtype=float)
+    canvas = cmap.copy()
+    canvas.set_bad(SURFACE)
+    mesh = ax.pcolormesh(np.ma.masked_invalid(grid), cmap=canvas, vmin=vmin, vmax=vmax, edgecolors=SURFACE, linewidth=2)
+    for i, (key, _) in enumerate(layout):
+        if key is None:
+            continue
+        for j, city in enumerate(CITIES):
+            v = grid[i, j]
+            if not present.loc[key, city]:
+                continue
+            if np.isnan(v):
+                ax.add_patch(mpl.patches.Rectangle((j + 0.04, i + 0.06), 0.92, 0.88, facecolor=SURFACE,
+                                                   edgecolor=AXIS, hatch="////", linewidth=0.6))
+                ax.text(j + 0.5, i + 0.5, missing, ha="center", va="center", fontsize=8, color=INK2,
+                        bbox=dict(facecolor=SURFACE, edgecolor="none", pad=1))
+                continue
+            mark = "*" if flags is not None and flags.loc[key, city] else ""
+            shade = abs(v - (vmin + vmax) / 2) / ((vmax - vmin) / 2)
+            ax.text(j + 0.5, i + 0.5, fmt(v) + mark, ha="center", va="center", fontsize=8.5,
+                    color="white" if shade > 0.6 else INK)
+    ax.set_xticks(np.arange(len(CITIES)) + 0.5, [CITY_NAME[c] for c in CITIES])
+    ax.set_yticks(np.arange(len(layout)) + 0.5, [label for _, label in layout])
+    for tick, (key, _) in zip(ax.get_yticklabels(), layout):
+        if key is None:
+            tick.set_fontweight("bold")
+            tick.set_color(INK)
+    ax.xaxis.tick_top()
+    ax.invert_yaxis()
+    ax.grid(False)
+    ax.tick_params(length=0)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    ax.set_title(title, pad=22)
+    return mesh
+
+
+def _matrix_figure(panels, present, title, subtitle, name):
+    rows = len(present) + 3
+    fig, axes = plt.subplots(1, len(panels), figsize=(7.4 * len(panels), 1.6 + 0.34 * rows),
+                             gridspec_kw=dict(wspace=0.9))
+    for ax, (values, cmap, vmin, vmax, fmt, label, flags, missing) in zip(np.atleast_1d(axes), panels):
+        mesh = _slot_heatmap(ax, values, present, cmap, vmin, vmax, fmt, label, flags, missing)
+        cb = fig.colorbar(mesh, ax=ax, fraction=0.04, pad=0.03)
+        cb.outline.set_visible(False)
+        cb.ax.tick_params(length=0, labelsize=8)
+    h = fig.get_figheight()
+    fig.suptitle(title, x=0.01, y=1 - 0.08 / h, ha="left", va="top", fontsize=13, fontweight="bold")
+    fig.text(0.01, 1 - 0.38 / h, subtitle, ha="left", va="top", fontsize=9.5, color=INK2)
+    fig.subplots_adjust(top=1 - 1.25 / h, bottom=0.03, left=0.2, right=0.97)
+    fig.savefig(FIGURES / f"{name}.png")
+    return fig
+
+
+def rf_r2_heatmap(skill):
+    present = F.slot_matrix(skill, "weeks").notna()
+    panels = [(F.slot_matrix(skill, "r2_calendar_pm25"), DIVERGING, -1, 1, "{:+.2f}".format,
+               "Out-of-fold R², calendar + PM2.5", None, ""),
+              (F.slot_matrix(skill, "r2_gain_from_pm25"), DIVERGING, -0.5, 0.5, "{:+.2f}".format,
+               "R² gained by adding PM2.5 to the calendar", None, "")]
+    return _matrix_figure(panels, present, "How well a random forest predicts each search series, and what PM2.5 contributes",
+                          "Every dense series, each week predicted from a model trained only on earlier weeks. "
+                          "Blank = the city has no dense series of that kind. Colour is clipped at the ends of each scale.",
+                          "causal_rf_r2_heatmap")
+
+
+def health_raw_vs_deseasonalised(table):
+    rows = table.groupby("city").size().max()
+    fig, axes = _grid_axes(1.4 + 0.55 * rows)
+    for ax, city in zip(axes, CITIES):
+        d = table[table["city"] == city].sort_values("raw_r")
+        _paired_rows(ax, d, city, d["series"], arrows=True)
+        ax.set_xlim(-0.5, 0.8)
+    _raw_legend(fig)
+    out = finish(fig, "Where a health search tracks PM2.5, the shared season is the reason",
+                 f"Raw correlation → correlation of seasonal residuals. {int(table['significant'].sum())} of {len(table)} "
+                 "dense health series stay significant once the season is removed.")
+    fig.subplots_adjust(wspace=1.0)
+    fig.savefig(FIGURES / "health_raw_vs_deseasonalised.png")
+    return out
+
+
+def health_role_contrast(contrast):
+    fig, axes = _grid_axes(5.6)
+    for ax, city in zip(axes, CITIES):
+        d = contrast[contrast["city"] == city].iloc[::-1]
+        _paired_rows(ax, d, city, [f"{r}\n{s}" for r, s in zip(d["role"], d["series"])], arrows=True)
+    _raw_legend(fig)
+    out = finish(fig, "Awareness and protection searches survive the season; the health headline is not significant in any city",
+                 "Each city's headline series per role. Raw correlation → correlation of seasonal residuals, "
+                 "with a block-bootstrap 95% interval.")
+    fig.subplots_adjust(wspace=0.9)
+    fig.savefig(FIGURES / "health_role_contrast.png")
+    return out
+
+
+def health_cascade(cascade, max_lag=8):
+    fig, axes = _city_axes(height=3.3, sharey=True)
+    edge = max_lag + 0.7
+    for ax, city in zip(axes[0], CITIES):
+        d = cascade[cascade["city"] == city].iloc[::-1].reset_index(drop=True)
+        for yi, r in d.iterrows():
+            low = -edge if pd.isna(r["ci_low"]) else r["ci_low"]
+            high = edge if pd.isna(r["ci_high"]) else r["ci_high"]
+            ax.hlines(yi, low, high, color=CITY_COLOR[city], linewidth=2.2, alpha=0.45)
+            if pd.isna(r["peak_lag"]):
+                ax.text(0, yi, "no peak", ha="center", va="center", fontsize=9, color=INK,
+                        bbox=dict(facecolor=SURFACE, edgecolor=AXIS, pad=2.5))
+            else:
+                ax.scatter(r["peak_lag"], yi, s=60, marker=ROLE_MARKER[r["role"]], color=CITY_COLOR[city], zorder=3)
+            ax.text(-edge + 0.3, yi + 0.3, f"{r['series']} · peak found in {r['interior_share']:.0%} of resamples",
+                    ha="left", va="center", fontsize=7.5, color=INK2)
+        ax.set_yticks(range(len(d)), d["role"])
+        ax.set_ylim(-0.5, len(d) - 0.35)
+        ax.axvline(0, color=INK, linewidth=1)
+        ax.set_xlim(-edge, edge)
+        ax.set_xticks(range(-max_lag, max_lag + 1, 4))
+        ax.set_title(CITY_NAME[city])
+        ax.set_xlabel("← search first    peak lag (weeks)    search after →")
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+    return finish(fig, "No cascade from awareness to health: where there is a signal it peaks with the pollution, and health has no dependable peak",
+                  "Lag of the highest correlation between seasonal residuals, headline series per role. Bar = block-bootstrap 95% "
+                  "interval; a bar running off the panel means the interval reaches the edge of the ±8-week window.",
+                  "health_cascade")
+
+
+def health_yoy(yoy):
+    fig, axes = _city_axes(height=3.4, sharey=True)
+    years = sorted(yoy["year"].unique())
+    for ax, city in zip(axes[0], CITIES):
+        for k, role in enumerate(ROLE_MARKER):
+            d = yoy[(yoy["city"] == city) & (yoy["role"] == role)].set_index("year").reindex(years)
+            x = np.arange(len(years)) + (k - 1) * 0.12
+            face = SURFACE if role == "health" else CITY_COLOR[city]
+            ax.plot(x, d["deseason_r"], color=CITY_COLOR[city], linewidth=1.4, alpha=0.5 if role == "health" else 0.9,
+                    linestyle=":" if role == "health" else "-")
+            ax.scatter(x, d["deseason_r"], s=54, marker=ROLE_MARKER[role], facecolor=face,
+                       edgecolor=CITY_COLOR[city], linewidth=1.8, zorder=3)
+        skipped = yoy[(yoy["city"] == city) & yoy["skipped"]].groupby("year")["weeks"].first()
+        for year, weeks in skipped.items():
+            ax.text(years.index(year), -0.3, f"{weeks} weeks\nskipped", ha="center", va="center", fontsize=8.5, color=MUTED)
+        ax.axhline(0, color=INK, linewidth=1)
+        ax.set_xticks(range(len(years)), years)
+        ax.set_xlim(-0.5, len(years) - 0.5)
+        ax.set_ylim(-0.45, 1)
+        ax.set_title(CITY_NAME[city])
+        ax.grid(axis="x", visible=False)
+    axes[0][0].set_ylabel("correlation of seasonal residuals")
+    proxies = [mpl.lines.Line2D([], [], marker=ROLE_MARKER[r], linestyle=":" if r == "health" else "-", markersize=7,
+                                color=INK2, markerfacecolor=SURFACE if r == "health" else INK2, markeredgewidth=1.8,
+                                label=r) for r in ROLE_MARKER]
+    fig.legend(handles=proxies, loc="upper right", ncols=3)
+    return finish(fig, "Year by year the health headline stays near zero; awareness and protection are positive but dip in 2023",
+                  "Correlation of seasonal residuals within each calendar year, headline series per role. "
+                  "Years with fewer than 20 paired weeks are skipped.",
+                  "health_yoy")
+
+
+def health_summary_matrix(matrices):
+    panels = [(matrices["deseason_r"], DIVERGING, -0.8, 0.8, "{:+.2f}".format, "Correlation with PM2.5, season removed",
+               matrices["significant"], ""),
+              (matrices["peak_lag"], DIVERGING, -8, 8, lambda v: f"{v:+.0f}" if v else "0", "Peak lag in weeks (negative = search first)",
+               None, "no peak")]
+    return _matrix_figure(panels, matrices["present"], "Every dense search series in one view: only awareness and protection carry a signal, and not in Melbourne",
+                          "* = significant after Benjamini–Hochberg correction. Hatched = no peak inside the ±8-week window. "
+                          "Blank = the city has no dense series of that kind.",
+                          "health_summary_matrix")

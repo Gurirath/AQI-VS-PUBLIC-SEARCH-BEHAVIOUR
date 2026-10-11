@@ -109,18 +109,20 @@ def collect_city(client, city, force=False):
     print(f"{city}: saved {len(raw)} sensor-days from {len(frames)} sensors", flush=True)
 
 
-def main(argv):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+def collect(cities=None, force=False):
     load_dotenv(ROOT / ".env")
     os.environ.setdefault("SSL_CERT_FILE", certifi.where())
-    force = "--force" in argv
-    cities = [a for a in argv if not a.startswith("--")] or list(CITIES)
     client = openaq.OpenAQ(api_key=os.environ["OPENAQ_API_KEY"])
     try:
-        for city in cities:
+        for city in cities or list(CITIES):
             collect_city(client, city, force=force)
     finally:
         client.close()
+
+
+def main(argv):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    collect([a for a in argv if not a.startswith("--")], force="--force" in argv)
 
 
 if __name__ == "__main__":

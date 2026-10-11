@@ -37,25 +37,38 @@ BASELINE_GEO_LEVELS = {
 
 LOCAL_TERMS = {
     "bangkok": [
-        {"key": "pm25_th", "label": "PM2.5 (Thai usage)", "keyword": "PM2.5", "role": "awareness"},
-        {"key": "dust_th", "label": "dust (Thai)", "keyword": "ฝุ่น", "role": "awareness"},
-        {"key": "air_quality_th", "label": "air quality (Thai)", "keyword": "คุณภาพอากาศ", "role": "awareness"},
-        {"key": "air_purifier_th", "label": "air purifier (Thai)", "keyword": "เครื่องฟอกอากาศ", "role": "protection"},
-        {"key": "mask_th", "label": "N95 mask (Thai)", "keyword": "หน้ากาก N95", "role": "protection"},
+        {"key": "pm25_th", "label": "PM2.5 (Thai usage)", "keyword": "PM2.5", "role": "awareness",
+         "slot": "PM2.5 (local usage)"},
+        {"key": "dust_th", "label": "dust (Thai)", "keyword": "ฝุ่น", "role": "awareness",
+         "slot": "smog / dust (local term)"},
+        {"key": "air_quality_th", "label": "air quality (Thai)", "keyword": "คุณภาพอากาศ", "role": "awareness",
+         "slot": "air quality (local language)"},
+        {"key": "air_purifier_th", "label": "air purifier (Thai)", "keyword": "เครื่องฟอกอากาศ", "role": "protection",
+         "slot": "air purifier (local language)"},
+        {"key": "mask_th", "label": "N95 mask (Thai)", "keyword": "หน้ากาก N95", "role": "protection",
+         "slot": "mask (local term)"},
     ],
     "krakow": [
-        {"key": "smog_pl", "label": "smog (Polish)", "keyword": "smog", "role": "awareness"},
-        {"key": "air_quality_pl", "label": "air quality (Polish)", "keyword": "jakość powietrza", "role": "awareness"},
-        {"key": "air_purifier_pl", "label": "air purifier (Polish)", "keyword": "oczyszczacz powietrza", "role": "protection"},
-        {"key": "mask_pl", "label": "anti-smog mask (Polish)", "keyword": "maska antysmogowa", "role": "protection"},
+        {"key": "smog_pl", "label": "smog (Polish)", "keyword": "smog", "role": "awareness",
+         "slot": "smog / dust (local term)"},
+        {"key": "air_quality_pl", "label": "air quality (Polish)", "keyword": "jakość powietrza", "role": "awareness",
+         "slot": "air quality (local language)"},
+        {"key": "air_purifier_pl", "label": "air purifier (Polish)", "keyword": "oczyszczacz powietrza", "role": "protection",
+         "slot": "air purifier (local language)"},
+        {"key": "mask_pl", "label": "anti-smog mask (Polish)", "keyword": "maska antysmogowa", "role": "protection",
+         "slot": "mask (local term)"},
     ],
     "melbourne": [
-        {"key": "p2_mask_au", "label": "P2 mask", "keyword": "P2 mask", "role": "protection"},
+        {"key": "p2_mask_au", "label": "P2 mask", "keyword": "P2 mask", "role": "protection",
+         "slot": "mask (local term)"},
     ],
     "lahore": [
-        {"key": "smog_pk", "label": "smog", "keyword": "smog", "role": "awareness"},
-        {"key": "smog_ur", "label": "smog (Urdu)", "keyword": "سموگ", "role": "awareness"},
-        {"key": "mask_pk", "label": "mask", "keyword": "mask", "role": "protection"},
+        {"key": "smog_pk", "label": "smog", "keyword": "smog", "role": "awareness",
+         "slot": "smog / dust (local term)"},
+        {"key": "smog_ur", "label": "smog (Urdu)", "keyword": "سموگ", "role": "awareness",
+         "slot": "smog / dust (local language)"},
+        {"key": "mask_pk", "label": "mask", "keyword": "mask", "role": "protection",
+         "slot": "mask (local term)"},
     ],
 }
 
@@ -99,10 +112,10 @@ def default_geo_level(city, term):
 
 
 HEADLINE_TERMS = {
-    "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th", "health": "hospital_th"},
-    "krakow": {"awareness": "smog_pl", "protection": "air_purifier_pl", "health": "hospital_pl"},
-    "melbourne": {"awareness": "air_quality", "protection": "air_purifier", "health": "hospital"},
-    "lahore": {"awareness": "smog_pk", "protection": "mask_pk", "health": "hospital"},
+    "bangkok": {"awareness": "dust_th", "protection": "air_purifier_th", "health": "breathing_difficulty_th"},
+    "krakow": {"awareness": "smog_pl", "protection": "air_purifier_pl", "health": "breathing_difficulty_pl"},
+    "melbourne": {"awareness": "air_quality", "protection": "air_purifier", "health": "breathing_difficulty"},
+    "lahore": {"awareness": "smog_pk", "protection": "air_purifier", "health": "breathing_difficulty"},
 }
 
 MAX_ZERO_SHARE = 0.5

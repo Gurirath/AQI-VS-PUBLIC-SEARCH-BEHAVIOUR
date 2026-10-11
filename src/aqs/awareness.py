@@ -4,7 +4,7 @@ import statsmodels.api as sm
 
 from . import features as F
 from .config import CITIES
-from .stats import RNG_SEED, expected_and_surprise
+from .stats import RNG_SEED, deseasonalize, expected_and_surprise
 
 HAC_LAGS = 8
 EPISODE_Z = 2.0
@@ -12,6 +12,7 @@ EPISODE_QUIET = 3
 WINDOW = (-4, 8)
 HIGH_QUANTILE = 2 / 3
 SEASON_START = {"bangkok": 7, "krakow": 7, "melbourne": 1, "lahore": 10}
+ASYMMETRY_HORIZONS = (0, 1, 2, 3)
 
 
 def _hac(y, X):
@@ -135,6 +136,32 @@ def silent_weeks(d, city, n_boot=2000, block=8, seed=RNG_SEED):
     return df, {"high_weeks": n, "silent_weeks": int(high["silent"].sum()), "silent_share": high["silent"].mean(),
                 "low": np.percentile(shares, 2.5), "high": np.percentile(shares, 97.5),
                 "silent_share_early": high.loc[~late, "silent"].mean(), "silent_share_late": high.loc[late, "silent"].mean()}
+
+
+def lag_asymmetry(d, horizons=ASYMMETRY_HORIZONS, n_boot=2000, block=8, seed=RNG_SEED):
+    res = deseasonalize(d)
+    change = res["pm25_mean"].diff().to_numpy()
+    directions = {"rising": change > 0, "falling": change < 0}
+    n = len(res)
+    rng = np.random.default_rng(seed)
+    starts = rng.integers(0, n - block + 1, size=(n_boot, int(np.ceil(n / block))))
+    idx = (starts[:, :, None] + np.arange(block)).reshape(n_boot, -1)[:, :n]
+    rows = []
+    for h in horizons:
+        ahead = res["search"].shift(-h).to_numpy()
+        means, boots, weeks = {}, {}, {}
+        for name, mask in directions.items():
+            ok = mask & ~np.isnan(ahead)
+            vals = np.where(ok, ahead, 0.0)
+            means[name], weeks[name] = vals.sum() / ok.sum(), int(ok.sum())
+            boots[name] = vals[idx].sum(axis=1) / ok[idx].sum(axis=1)
+            low, high = np.nanpercentile(boots[name], [2.5, 97.5])
+            rows.append({"horizon": h, "direction": name, "weeks": weeks[name], "mean": means[name],
+                         "low": low, "high": high})
+        low, high = np.nanpercentile(boots["rising"] - boots["falling"], [2.5, 97.5])
+        rows.append({"horizon": h, "direction": "rising minus falling", "weeks": sum(weeks.values()),
+                     "mean": means["rising"] - means["falling"], "low": low, "high": high})
+    return pd.DataFrame(rows)
 
 
 def scorecard(long, role="attention"):
