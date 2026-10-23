@@ -11,14 +11,87 @@ from plotly.subplots import make_subplots
 from scipy import stats
 
 from aqs import awareness as A, features as F, stats as S
-from aqs.config import CITIES, INTERIM, PROCESSED, WHO_24H_GUIDELINE
+from aqs.config import CITIES, HEADLINE_TERMS, INTERIM, PROCESSED, WHO_24H_GUIDELINE, default_geo_level
 
-SURFACE, INK, INK2, MUTED, GRID, AXIS, EMPTY = "#fcfcfb", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#f0efec"
+SURFACE, INK, INK2, MUTED, GRID, AXIS, EMPTY = "#ffffff", "#111111", "#4a4a47", "#8a8984", "#ececea", "#cfcec8", "#f3f3f1"
 COLOR = {city: cfg["color"] for city, cfg in CITIES.items()}
 NAME = {city: cfg["name"] for city, cfg in CITIES.items()}
 ATTENTION = "attention index (all terms combined)"
+BADGE = {"Reliable proxy": "b-good", "Real, but mostly seasonal": "b-mid", "Not informative": "b-none"}
 
-st.set_page_config(page_title="Air quality vs search", page_icon="🌫️", layout="wide")
+st.set_page_config(page_title="Air quality vs search", page_icon="🌫️", layout="wide", initial_sidebar_state="expanded")
+
+CSS = """
+<style>
+header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], #MainMenu, footer {display: none !important;}
+.block-container {padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1280px;}
+html, body, [class*="css"] {letter-spacing: -0.005em;}
+h1 {font-weight: 700 !important; letter-spacing: -0.03em !important; font-size: 2.35rem !important; line-height: 1.12 !important; margin-bottom: 0.2rem !important;}
+h2, h3 {font-weight: 650 !important; letter-spacing: -0.02em !important;}
+section[data-testid="stSidebar"] {background: #f6f6f4; border-right: 1px solid #e6e6e2;}
+section[data-testid="stSidebar"] .block-container {padding-top: 1.6rem;}
+section[data-testid="stSidebar"] [role="radiogroup"] {gap: 2px;}
+section[data-testid="stSidebar"] [role="radiogroup"] label {padding: 8px 12px; border-radius: 8px; width: 100%; margin: 0;}
+section[data-testid="stSidebar"] [role="radiogroup"] label > div:not(:has([data-testid="stMarkdownContainer"])):not([data-testid="stMarkdownContainer"]) {display: none !important;}
+section[data-testid="stSidebar"] [role="radiogroup"] label > div > div:not(:has([data-testid="stMarkdownContainer"])):not([data-testid="stMarkdownContainer"]) {display: none !important;}
+section[data-testid="stSidebar"] [role="radiogroup"] label input {position: absolute; opacity: 0; pointer-events: none;}
+section[data-testid="stSidebar"] [role="radiogroup"] label:hover {background: #ececea;}
+section[data-testid="stSidebar"] [role="radiogroup"] label[data-selected="true"], section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {background: linear-gradient(90deg, #2a78d6, #6c4fd8);}
+section[data-testid="stSidebar"] [role="radiogroup"] label[data-selected="true"] p, section[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {color: #ffffff !important; font-weight: 600;}
+.brand {font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; color: #111;}
+.brand-sub {color: #8a8984; font-size: 0.82rem; margin-top: 2px; margin-bottom: 18px;}
+.side-label {text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; color: #8a8984; font-weight: 600; margin: 18px 0 6px 0;}
+.eyebrow {text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; color: #2a78d6; font-weight: 700; margin-bottom: 6px;}
+.heroband {background: linear-gradient(120deg, #eef4fd 0%, #f4effd 45%, #fdf3ea 100%); border: 1px solid #e8e6f3; border-radius: 18px; padding: 26px 30px 6px 30px; margin-bottom: 24px;}
+.heroband .lede {margin-bottom: 20px;}
+.chips {display: flex; gap: 8px; flex-wrap: wrap; margin: -6px 0 20px 0;}
+.chip {display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e6e6e2; border-radius: 999px; padding: 4px 12px 4px 10px; font-size: 0.82rem; color: #333; font-weight: 600;}
+.badge {display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; margin: 12px 0 10px 0;}
+.b-good {background: #e3f5ec; color: #12784f;}
+.b-mid {background: #fdf0dc; color: #a35d00;}
+.b-none {background: #efefed; color: #6b6a66;}
+.lede {color: #4a4a47; font-size: 1.05rem; line-height: 1.55; max-width: 820px; margin: 6px 0 26px 0;}
+.section {margin: 34px 0 8px 0;}
+.section .eyebrow {margin-bottom: 2px;}
+.section h3 {margin: 0 !important; padding: 0 !important; font-size: 1.3rem !important;}
+.section p {color: #6b6a66; font-size: 0.9rem; margin: 4px 0 0 0; max-width: 900px;}
+.card {background: #fff; border: 1px solid #e6e6e2; border-radius: 14px; padding: 16px 18px 14px 18px; height: 100%; border-top-width: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);}
+.card .city {display: flex; align-items: center; gap: 8px; font-weight: 600; color: #111; font-size: 0.95rem;}
+.card .dot {width: 9px; height: 9px; border-radius: 50%; display: inline-block;}
+.card .big {font-size: 2.3rem; font-weight: 750; letter-spacing: -0.04em; line-height: 1; margin: 2px 0 2px 0; font-variant-numeric: tabular-nums;}
+.card .bigk {color: #8a8984; font-size: 0.78rem; margin-bottom: 8px;}
+.card .row {display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #f0f0ed; padding: 8px 0 2px 0;}
+.card .k {color: #8a8984; font-size: 0.8rem;}
+.card .v {color: #111; font-weight: 650; font-size: 1.05rem; font-variant-numeric: tabular-nums;}
+.tile {background: #fff; border: 1px solid #e6e6e2; border-radius: 14px; padding: 16px 18px; border-left-width: 5px;}
+.tile .k {color: #8a8984; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;}
+.tile .v {color: #111; font-weight: 700; font-size: 1.9rem; letter-spacing: -0.03em; margin-top: 4px; font-variant-numeric: tabular-nums;}
+.tile .s {color: #6b6a66; font-size: 0.82rem; margin-top: 2px;}
+.finding {border-left: 3px solid #6c4fd8; background: #fff; border-radius: 0 10px 10px 0; padding-top: 8px !important; padding-bottom: 8px !important; padding: 2px 0 2px 14px; margin: 10px 0; color: #333; line-height: 1.5;}
+div[data-testid="stPlotlyChart"] {background: #fff; border: 1px solid #ececea; border-radius: 12px; padding: 6px 4px 0 4px;}
+div[data-testid="stMetric"] {background: #fff; border: 1px solid #e6e6e2; border-radius: 12px; padding: 12px 14px;}
+div[data-testid="stMetricLabel"] p {color: #8a8984 !important; font-size: 0.8rem !important;}
+</style>
+"""
+st.markdown(CSS, unsafe_allow_html=True)
+
+
+def hero(eyebrow, title, lede=None):
+    chips = "".join(f"<span class='chip'><span class='dot' style='width:8px;height:8px;border-radius:50%;background:{COLOR[c]}'></span>{NAME[c]}</span>" for c in CITIES)
+    lede_html = f"<div class='lede'>{lede}</div>" if lede else ""
+    st.markdown(f"<div class='heroband'><div class='eyebrow'>{eyebrow}</div><h1>{title}</h1>{lede_html}<div class='chips'>{chips}</div></div>",
+                unsafe_allow_html=True)
+
+
+def section(eyebrow, title, note=None):
+    note_html = f"<p>{note}</p>" if note else ""
+    st.markdown(f"<div class='section'><div class='eyebrow'>{eyebrow}</div><h3>{title}</h3>{note_html}</div>",
+                unsafe_allow_html=True)
+
+
+def tile(col, label, value, sub="", color="#111111"):
+    col.markdown(f"<div class='tile' style='border-left-color:{color}'><div class='k'>{label}</div><div class='v' style='color:{color}'>{value}</div><div class='s'>{sub}</div></div>",
+                 unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -72,8 +145,8 @@ def verdict_label(row):
 def style(fig, height=340, legend=False):
     fig.update_layout(
         height=height, paper_bgcolor=SURFACE, plot_bgcolor=SURFACE, showlegend=legend,
-        font=dict(family="system-ui, -apple-system, Segoe UI, sans-serif", size=13, color=INK2),
-        margin=dict(l=10, r=10, t=30, b=10), hoverlabel=dict(bgcolor="white", font_size=13),
+        font=dict(family="Source Sans Pro, system-ui, -apple-system, Segoe UI, sans-serif", size=13, color=INK2),
+        margin=dict(l=12, r=12, t=24, b=12), hoverlabel=dict(bgcolor="white", font_size=13),
         legend=dict(orientation="h", y=1.12, x=0),
     )
     fig.update_xaxes(gridcolor=GRID, linecolor=AXIS, zeroline=False, ticks="outside", tickcolor=AXIS)
@@ -219,44 +292,41 @@ def zero_chart(city):
 
 
 def page_overview():
-    st.title("Does bad air show up in what people search for?")
-    st.markdown(
-        f"Weekly PM2.5 pollution against Google search interest in {len(CITIES)} contrasting cities, 2022–2024. "
-        "Most studies stop at a correlation. This project asks **when the public notices bad air, and when it stops noticing**.")
+    hero("PM2.5 × Google Trends · 4 cities · 2022–2024", "Does bad air show up in what people search for?",
+         "Weekly PM2.5 from reference monitors against Google search interest in Bangkok, Kraków, Melbourne and Lahore. "
+         "The question is not only whether the two move together, but <b>when the public notices bad air, and when it stops noticing</b>.")
     v, card = verdicts(), scorecard()
-    for col, city in zip(st.columns(len(CITIES)), CITIES):
-        with col.container(border=True):
-            st.markdown(f"<span style='color:{COLOR[city]};font-size:1.4rem'>●</span> **{NAME[city]}**", unsafe_allow_html=True)
-            st.subheader(verdict_label(v.loc[city]))
-            st.metric("Correlation, season removed", f"{v.loc[city, 'deseason_r']:.2f}")
-            st.metric("Forecast gain from PM2.5", f"{v.loc[city, 'r2_gain_from_pm25']:+.2f} R²")
-            st.metric("Polluted weeks unnoticed", f"{card.loc[city, 'silent_share']:.0%}")
-    st.subheader("Silent pollution weeks")
-    st.caption("Each bar is one week. Coloured: polluted (top third for that city) and people searched. "
-               "Black: polluted, but search stayed below its usual level. Pale: ordinary week. Blank: no PM2.5 data.")
+    for col, city in zip(st.columns(len(CITIES), gap="small"), CITIES):
+        col.markdown(
+            f"<div class='card' style='border-top-color:{COLOR[city]}'><div class='city'><span class='dot' style='background:{COLOR[city]}'></span>{NAME[city]}</div>"
+            f"<span class='badge {BADGE[verdict_label(v.loc[city])]}'>{verdict_label(v.loc[city])}</span>"
+            f"<div class='big' style='color:{COLOR[city]}'>{v.loc[city, 'deseason_r']:.2f}</div><div class='bigk'>correlation with PM2.5, season removed</div>"
+            f"<div class='row'><span class='k'>Forecast gain from PM2.5</span><span class='v'>{v.loc[city, 'r2_gain_from_pm25']:+.2f} R²</span></div>"
+            f"<div class='row'><span class='k'>Polluted weeks unnoticed</span><span class='v'>{card.loc[city, 'silent_share']:.0%}</span></div></div>",
+            unsafe_allow_html=True)
+    section("Awareness gap", "Silent pollution weeks",
+            "Each bar is one week. Coloured: polluted (top third for that city) and people searched. "
+            "Black: polluted, but search stayed below its usual level. Pale: ordinary week. Blank: no PM2.5 data.")
     show(silent_chart())
-    st.subheader("What we found")
+    section("Summary", "What we found")
     h = health_summary()
-    st.markdown(
-        "- **Attention survives removing the shared season** in Bangkok, Kraków and Lahore, so it is more than two series "
-        "peaking in the same months. Lahore's estimate rests on one monitor and has a very wide interval.\n"
-        "- **Health searches follow the season, not the air.** "
-        f"{h['city']} \"{h['label']}\" correlates with PM2.5 at {h['raw']:+.2f} raw and {h['deseason']:+.2f} with the season "
-        f"removed, and {h['significant']} of {h['series']} health series stay significant. Most health series show no raw "
-        "correlation to begin with.\n"
-        "- **Search responds in the same week** as pollution in Bangkok and Kraków and within a week in Lahore, and the "
-        "response fades within a week or two.\n"
-        "- **The cities differ over a season:** attention builds through Bangkok's smog season and wears out through "
-        "Kraków's; Lahore leans towards wearing out.\n"
-        "- **Melbourne shows nothing**, because its air is almost always under the WHO guideline: there is little to notice.\n"
-        "- **Past pollution does not forecast future attention** (Granger tests), because the response is faster than one week.\n"
-        "- **No switch-on level is established.** Lahore's flat-then-rising fit is weakly identified.")
-    st.caption("The card label is computed: not informative if the correlation does not survive the season, a reliable "
-               "proxy if PM2.5 adds more than 0.05 R² to a calendar forecast, otherwise real but mostly seasonal.")
+    findings = [
+        "<b>Attention survives removing the shared season</b> in Bangkok, Kraków and Lahore. Lahore's estimate rests on one monitor and has a very wide interval.",
+        f"<b>Health searches follow the season, not the air.</b> {h['city']} \"{h['label']}\" correlates with PM2.5 at {h['raw']:+.2f} raw and "
+        f"{h['deseason']:+.2f} with the season removed; {h['significant']} of {h['series']} health series stay significant.",
+        "<b>Search responds in the same week</b> as pollution in Bangkok and Kraków and within a week in Lahore.",
+        "<b>Attention builds through Bangkok's season and wears out through Kraków's</b>; Lahore leans towards wearing out.",
+        "<b>Melbourne shows nothing</b>: its air is almost always under the WHO guideline, so there is little to notice.",
+        "<b>Past pollution does not forecast future attention</b> (Granger), because the response is faster than a week.",
+    ]
+    st.markdown("".join(f"<div class='finding'>{f}</div>" for f in findings), unsafe_allow_html=True)
+    st.caption("Card label: not informative if the correlation does not survive the season, a reliable proxy if PM2.5 adds more "
+               "than 0.05 R² to a calendar forecast, otherwise real but mostly seasonal.")
 
 
 def page_explore(city):
-    st.title(f"Explore {NAME[city]}")
+    hero("City explorer", f"Explore {NAME[city]}",
+         "Pick a search series, remove the season and shift the lag to see how the relationship holds up.")
     options = list(series_options(city))
     c1, c2, c3 = st.columns([2, 1, 2])
     choice = c1.selectbox("Search series", options)
@@ -288,16 +358,16 @@ def page_explore(city):
 
 
 def page_gap(city):
-    st.title(f"The Awareness Gap — {NAME[city]}")
-    st.markdown("Five measurements of *when* search works as a signal of public awareness, beyond whether it correlates.")
+    hero("Awareness gap", f"When does {NAME[city]} notice?",
+         "Five measurements of <i>when</i> search works as a signal of public awareness, beyond whether it correlates.")
     d = get_pair(city, ATTENTION)
     card = scorecard().loc[city]
     left, right = st.columns(2)
     with left:
-        st.subheader("Level or surprise?")
+        section("Response", "Level or surprise?")
         st.caption("Does attention follow the pollution the calendar predicts, or the part it does not? Bars are 95% intervals.")
         show(interval_chart(A.level_vs_surprise(d), city))
-        st.subheader("Is there a switch-on level?")
+        section("Threshold", "Is there a switch-on level?")
         th = A.attention_threshold(d)
         better = "better than" if th["aic_gain_vs_linear"] > 2 else "no better than"
         span = d["pm25_mean"].max() - d["pm25_mean"].min()
@@ -307,12 +377,12 @@ def page_gap(city):
                    + (" The interval covers most of the observed range, so the switch-on point is weakly identified." if weak else ""))
         show(dose_chart(d, th, city))
     with right:
-        st.subheader("How fast, and for how long?")
+        section("Episodes", "How fast, and for how long?")
         ep = A.episode_response(d)
         st.caption(f"Average attention around {ep['summary']['episodes']} pollution spikes, relative to the four weeks before. "
                    "Grey band is a 95% bootstrap interval.")
         show(episode_chart(ep, city))
-        st.subheader("Over a season")
+        section("Habituation", "Over a season")
         a, b = st.columns(2)
         direction = "builds" if card["habituation_per_week"] > 0 else "wears out"
         solid = card["habituation_p"] < 0.05
@@ -322,7 +392,7 @@ def page_gap(city):
                  help=f"95% interval {card['silent_low']:.0%} to {card['silent_high']:.0%}")
         st.markdown(f"Attention **{direction}** as the season goes on." if solid else
                     "No reliable change in attention through the season.")
-    st.subheader("Scorecard, all cities")
+    section("Comparison", "Scorecard, all cities")
     sc = scorecard()
     table = pd.DataFrame({
         "Effect of unexpected pollution (SD per 10 µg/m³)": sc["surprise_effect"].map("{:.2f}".format),
@@ -336,8 +406,9 @@ def page_gap(city):
 
 
 def page_data(city):
-    st.title("Data and methods")
-    st.subheader("PM2.5 coverage")
+    hero("Data and methods", "Where the numbers come from",
+         "Coverage of the PM2.5 record, which sensors and search series were kept, and how every statistic is computed.")
+    section("Coverage", "PM2.5 record by week")
     st.caption("Days of valid PM2.5 behind each week. Every city loses the same weeks in early 2023: that gap is in OpenAQ itself.")
     show(coverage_chart())
     sel = pd.read_csv(INTERIM / "sensor_selection.csv")
@@ -347,10 +418,10 @@ def page_data(city):
     q["median PM2.5 (µg/m³)"] = pm25.groupby("city")["pm25_mean"].median().round(1)
     q.index = [NAME[c] for c in q.index]
     st.dataframe(q.rename(columns={"candidates": "sensors found", "kept": "sensors kept"}), width="stretch")
-    st.subheader(f"Usable search series — {NAME[city]}")
+    section("Search data", f"Usable search series in {NAME[city]}")
     st.caption("Grey series are zero in more than half of all weeks and are left out.")
     show(zero_chart(city))
-    st.subheader("How the numbers are made")
+    section("Method", "How the numbers are made")
     st.markdown(
         "- **PM2.5:** OpenAQ, every reference-grade monitor within 25 km with data on at least half the study days; "
         "daily median across monitors, averaged to Sunday–Saturday weeks.\n"
@@ -361,7 +432,7 @@ def page_data(city):
         "- **Removing the season:** a fit of trend plus annual sine waves is subtracted from each series.\n"
         "- **Uncertainty:** block bootstrap and circular-shift tests, which allow for neighbouring weeks being alike; "
         "p-values adjusted for multiple tests.")
-    st.subheader("Limits")
+    section("Caveats", "Limits")
     st.markdown(
         "- Three years of weekly data: five or six pollution episodes and three seasons per city.\n"
         "- The response is faster than a week, so weekly data cannot show which comes first.\n"
@@ -372,13 +443,101 @@ def page_data(city):
         "- Google Trends values differ slightly between pulls.")
 
 
+@st.cache_data
+def results_table():
+    return pd.read_csv(PROCESSED / "results_summary.csv")
+
+
+def headline_row(t, city, role):
+    term = HEADLINE_TERMS[city][role]
+    return t[(t["city"] == city) & (t["term"] == term) & (t["geo_level"] == default_geo_level(city, term))].iloc[0]
+
+
+def dumbbell_chart(rows, color, height=None):
+    rows = rows.sort_values("raw_r")
+    labels = rows["series"].str.replace(", country", "", regex=False).tolist()
+    fig = go.Figure()
+    for (_, r), lab in zip(rows.iterrows(), labels):
+        fig.add_trace(go.Scatter(x=[r["raw_r"], r["deseason_r"]], y=[lab, lab], mode="lines",
+                                 line=dict(color=AXIS, width=2), hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=rows["raw_r"], y=labels, mode="markers", name="raw",
+                             marker=dict(size=12, color=SURFACE, line=dict(color=INK2, width=2)),
+                             hovertemplate="%{y}<br>raw r %{x:+.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=rows["deseason_r"], y=labels, mode="markers", name="season removed (95% interval)",
+                             marker=dict(size=13, color=color, line=dict(color="white", width=1.5)),
+                             error_x=dict(type="data", symmetric=False, array=rows["ci_high"] - rows["deseason_r"],
+                                          arrayminus=rows["deseason_r"] - rows["ci_low"], color=color, thickness=2.5, width=0),
+                             hovertemplate="%{y}<br>season removed r %{x:+.2f}<extra></extra>"))
+    fig.add_vline(x=0, line_color=INK, line_width=1)
+    fig.update_xaxes(title_text="correlation with PM2.5", range=[-0.5, 0.9])
+    fig.update_layout(showlegend=True)
+    for tr in fig.data[:-2]:
+        tr.showlegend = False
+    return style(fig, height or 90 + 46 * len(rows), legend=True)
+
+
+def contrast_chart(t):
+    fig = make_subplots(rows=1, cols=len(CITIES), shared_yaxes=True, subplot_titles=[NAME[c] for c in CITIES], horizontal_spacing=0.04)
+    for i, city in enumerate(CITIES, start=1):
+        for role in ("health", "protection", "awareness"):
+            r = headline_row(t, city, role)
+            fig.add_trace(go.Scatter(x=[r["raw_r"], r["deseason_r"]], y=[role, role], mode="lines",
+                                     line=dict(color=AXIS, width=2), hoverinfo="skip", showlegend=False), 1, i)
+            fig.add_trace(go.Scatter(x=[r["raw_r"]], y=[role], mode="markers", showlegend=False,
+                                     marker=dict(size=11, color=SURFACE, line=dict(color=INK2, width=2)),
+                                     hovertemplate=f"{NAME[city]} {role}<br>raw %{{x:+.2f}}<extra></extra>"), 1, i)
+            fig.add_trace(go.Scatter(x=[r["deseason_r"]], y=[role], mode="markers", showlegend=False,
+                                     marker=dict(size=11, color=COLOR[city] if r["significant"] else "#ffffff",
+                                                 line=dict(color=COLOR[city], width=2)),
+                                     hovertemplate=f"{NAME[city]} {role}<br>season removed %{{x:+.2f}}<extra></extra>"), 1, i)
+        fig.add_vline(x=0, line_color=INK, line_width=1, row=1, col=i)
+        fig.update_xaxes(range=[-0.3, 0.9], dtick=0.3, row=1, col=i)
+    fig.update_annotations(font=dict(size=14, color=INK))
+    return style(fig, 260)
+
+
+def page_health(city):
+    t = results_table()
+    health = t[t["role"] == "health"]
+    ap = t[t["role"].isin(["awareness", "protection"])]
+    drop = health.assign(drop=health["raw_r"] - health["deseason_r"]).sort_values("drop").iloc[-1]
+    hero("Health signal", "Do health searches respond to the air, or to winter?",
+         "Searches for symptoms and remedies rise in the smog season. Removing the shared seasonal cycle from both series "
+         "shows whether anything is left once winter is taken out.")
+    c1, c2, c3, c4 = st.columns(4, gap="small")
+    tile(c1, "Health series tested", f"{len(health)}", "dense series across 4 cities", "#6c4fd8")
+    tile(c2, "Health significant, season removed", f"{int(health['significant'].sum())}", "after FDR correction", "#d6453d")
+    tile(c3, "Awareness + protection significant", f"{int(ap['significant'].sum())} of {len(ap)}", "on the same test", "#12a06a")
+    tile(c4, "Largest collapse", f"{drop['raw_r']:+.2f} → {drop['deseason_r']:+.2f}",
+         f"{NAME[drop['city']]}, {drop['series'].split(' (')[0]}", COLOR[drop['city']])
+    section("Selected city", f"Every health series in {NAME[city]}",
+            "Open circle: raw correlation. Filled dot: correlation once the season is removed, with its 95% block-bootstrap interval.")
+    show(dumbbell_chart(health[health["city"] == city], COLOR[city]))
+    section("All cities", "Awareness and protection keep their link; health does not",
+            "Headline series per role, raw (open) and season removed (filled when significant).")
+    show(contrast_chart(t))
+    section("Over time", f"PM2.5 and searches for breathing difficulty in {NAME[city]}")
+    remove = st.toggle("Remove the season from both series", value=False)
+    long = load()[0]
+    term = HEADLINE_TERMS[city]["health"]
+    d = F.pair(long, city, term, default_geo_level(city, term))
+    if remove:
+        d = S.deseasonalize(d)
+    show(timeline_chart(d, city, "breathing difficulty", "PM2.5, season removed" if remove else "PM2.5 (µg/m³)"))
+    st.markdown("<div class='finding'>A raw correlation between pollution and health searches is not evidence of a health response: "
+                "cold-season illness and cold-season pollution arrive together.</div>", unsafe_allow_html=True)
+
+
 PAGES = {"Overview": lambda c: page_overview(), "Explore a city": page_explore,
-         "Awareness Gap": page_gap, "Data and methods": page_data}
+         "Awareness Gap": page_gap, "Health signal": page_health, "Data and methods": page_data}
 
 with st.sidebar:
-    st.header("Air quality vs search")
+    st.markdown("<div class='brand'>Air quality vs search</div><div class='brand-sub'>PM2.5 and public attention</div>", unsafe_allow_html=True)
+    st.markdown("<div class='side-label'>Pages</div>", unsafe_allow_html=True)
     page = st.radio("Page", list(PAGES), label_visibility="collapsed")
-    city = st.selectbox("City", CITIES, format_func=NAME.get)
-    st.caption("PM2.5 from OpenAQ · search interest from Google Trends · 2022–2024")
+    st.markdown("<div class='side-label'>City</div>", unsafe_allow_html=True)
+    city = st.selectbox("City", CITIES, format_func=NAME.get, label_visibility="collapsed")
+    st.markdown("<div class='side-label'>Sources</div>", unsafe_allow_html=True)
+    st.caption("PM2.5 from OpenAQ reference monitors · search interest from Google Trends · weekly, 2022–2024")
 
 PAGES[page](city)
