@@ -1,0 +1,87 @@
+{
+  "rows": 448,
+  "dev_weeks": 270,
+  "test_weeks": 178,
+  "configurations": 64,
+  "feature_sets": 5,
+  "runs": 320,
+  "majority_accuracy": 0.5168539325842696,
+  "persistence_accuracy": 0.7303370786516854,
+  "selected": [
+    {
+      "feature_set": "calendar",
+      "model": "CatBoost (depth 4)",
+      "family": "Boosting",
+      "cv_balanced_accuracy": 0.7226640345826979,
+      "test_accuracy": 0.7921348314606742,
+      "test_ci_low": 0.7303370786516854,
+      "test_ci_high": 0.848314606741573,
+      "test_balanced_accuracy": 0.7920879676440848,
+      "test_f1": 0.7861271676300579,
+      "test_auc": 0.8656471183013145
+    },
+    {
+      "feature_set": "health",
+      "model": "k-nearest neighbours (k=5)",
+      "family": "Single",
+      "cv_balanced_accuracy": 0.5828447500455005,
+      "test_accuracy": 0.5224719101123596,
+      "test_ci_low": 0.449438202247191,
+      "test_ci_high": 0.5955056179775281,
+      "test_balanced_accuracy": 0.5171890798786654,
+      "test_f1": 0.4217687074829932,
+      "test_auc": 0.50461324570273
+    },
+    {
+      "feature_set": "search",
+      "model": "Extra trees (500, depth 6)",
+      "family": "Bagging",
+      "cv_balanced_accuracy": 0.6907374315963124,
+      "test_accuracy": 0.7303370786516854,
+      "test_ci_low": 0.6685393258426966,
+      "test_ci_high": 0.7921348314606742,
+      "test_balanced_accuracy": 0.7254802831142568,
+      "test_f1": 0.6756756756756757,
+      "test_auc": 0.8305106167846309
+    },
+    {
+      "feature_set": "search+calendar",
+      "model": "Extra trees (500, depth 6)",
+      "family": "Bagging",
+      "cv_balanced_accuracy": 0.704702604205818,
+      "test_accuracy": 0.8089887640449438,
+      "test_ci_low": 0.7526685393258427,
+      "test_ci_high": 0.8651685393258427,
+      "test_balanced_accuracy": 0.807633973710819,
+      "test_f1": 0.7951807228915663,
+      "test_auc": 0.8886501516683518
+    },
+    {
+      "feature_set": "all",
+      "model": "SVM (RBF kernel)",
+      "family": "Single",
+      "cv_balanced_accuracy": 0.7209002535207273,
+      "test_accuracy": 0.8089887640449438,
+      "test_ci_low": 0.7471910112359551,
+      "test_ci_high": 0.8595505617977528,
+      "test_balanced_accuracy": 0.8083923154701719,
+      "test_f1": 0.8,
+      "test_auc": 0.8816986855409504
+    }
+  ],
+  "best_by_test_search_calendar": {
+    "model": "Bagged SVM",
+    "test_accuracy": 0.8146067415730337
+  },
+  "share_configs_at_least_70": {
+    "calendar": 1.0,
+    "health": 0.0,
+    "search": 0.8125,
+    "search+calendar": 0.984375,
+    "all": 0.984375
+  },
+  "friedman": {
+    "chi2": 10.303236797274268,
+    "p": 0.3264988823109895
+  }
+}

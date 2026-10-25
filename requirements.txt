@@ -11,3 +11,7 @@ streamlit
 trendspyg>=1.9.0
 jupyter
 certifi
+xgboost
+lightgbm
+catboost
+joblib

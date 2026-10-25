@@ -1,0 +1,65 @@
+family,model
+Single,Logistic regression
+Single,Logistic regression (L1)
+Single,Logistic regression (C=0.1)
+Single,Ridge classifier
+Single,Linear discriminant analysis
+Single,Gaussian naive Bayes
+Single,Quadratic discriminant analysis
+Single,k-nearest neighbours (k=5)
+Single,k-nearest neighbours (k=15)
+Single,SVM (RBF kernel)
+Single,SVM (linear)
+Single,Decision tree (depth 3)
+Single,Decision tree (depth 6)
+Single,MLP (16 units)
+Single,MLP (64-32 units)
+Bagging,Bagged decision trees
+Bagging,Random subspace trees
+Bagging,Pasting decision trees
+Bagging,Bagged logistic regression
+Bagging,Bagged k-NN
+Bagging,Bagged SVM
+Bagging,"Random forest (300, depth 4)"
+Bagging,"Random forest (500, full depth)"
+Bagging,Random forest (balanced)
+Bagging,Random forest (entropy)
+Bagging,Extra trees (300)
+Bagging,"Extra trees (500, depth 6)"
+Boosting,AdaBoost (stumps)
+Boosting,AdaBoost (depth-3 trees)
+Boosting,AdaBoost (logistic regression)
+Boosting,Gradient boosting (100)
+Boosting,"Gradient boosting (300, lr 0.05)"
+Boosting,Stochastic gradient boosting
+Boosting,"Gradient boosting (stumps, 500)"
+Boosting,Histogram gradient boosting
+Boosting,Histogram gradient boosting (L2)
+Boosting,XGBoost (depth 3)
+Boosting,XGBoost (depth 6)
+Boosting,XGBoost (regularised)
+Boosting,XGBoost random forest
+Boosting,LightGBM (31 leaves)
+Boosting,LightGBM (15 leaves)
+Boosting,LightGBM (DART)
+Boosting,LightGBM (GOSS)
+Boosting,CatBoost (depth 4)
+Boosting,CatBoost (depth 6)
+Voting,"Hard vote: LR, RF, GB"
+Voting,"Soft vote: LR, RF, GB"
+Voting,"Soft vote: SVM, k-NN, RF"
+Voting,"Soft vote: RF, ET, HGB"
+Voting,"Soft vote: XGB, LGBM, CatBoost"
+Voting,"Soft vote: LR, SVM, RF, XGB, CatBoost"
+Voting,"Hard vote: LR, SVM, RF, XGB, CatBoost"
+Voting,"Weighted soft vote: RF, XGB, LR"
+Stacking,"Stack: LR, RF, GB → LR"
+Stacking,"Stack: LR, k-NN, SVM → RF"
+Stacking,"Stack: XGB, LGBM, CatBoost → LR"
+Stacking,"Stack: RF, ET, bagged trees → LR"
+Stacking,"Stack: LR, SVM, RF, XGB → LR"
+Stacking,"Stack with passthrough: LR, RF, XGB → LR"
+Stacking,"Stack: LR, RF, SVM → GB"
+Stacking,"Stack: MLP, SVM, RF → LR"
+Stacking,"Stack: NB, k-NN, tree → LR"
+Stacking,"Stack: LR, SVM, RF, ET, XGB, CatBoost → LR"

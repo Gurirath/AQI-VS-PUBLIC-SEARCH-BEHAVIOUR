@@ -528,8 +528,160 @@ def page_health(city):
                 "cold-season illness and cold-season pollution arrive together.</div>", unsafe_allow_html=True)
 
 
+MC = Path(__file__).resolve().parents[1] / "outputs" / "model_comparison"
+FAMILY_COLOR = {"Single": "#8a8984", "Bagging": "#2a78d6", "Boosting": "#eb6834", "Voting": "#1baf7a", "Stacking": "#6c4fd8"}
+FS_LABEL = {"calendar": "Calendar only", "health": "Health searches only", "search": "Awareness + protection searches",
+            "search+calendar": "Search + calendar", "all": "All features"}
+
+
+@st.cache_data
+def mc_tables():
+    board = pd.read_csv(MC / "leaderboard_all.csv")
+    sel = pd.read_csv(MC / "selected_per_feature_set.csv").set_index("feature_set")
+    city = pd.read_csv(MC / "per_city_accuracy.csv", index_col=0)
+    summary = pd.read_json(MC / "summary.json", typ="series")
+    return board, sel, city, summary
+
+
+@st.cache_data
+def mc_dataset():
+    from aqs import classify as K
+    return K.build_dataset(load()[0])
+
+
+@st.cache_resource(show_spinner=False)
+def mc_fit(feature_set, model):
+    from aqs import classify as K
+    data = mc_dataset()
+    est = next(e for _, name, e in K.model_zoo() if name == model)
+    cols = K.FEATURE_SETS[feature_set]
+    dev, test = data[data["split"] == "dev"], data[data["split"] == "test"]
+    fitted, pred, score = K.fit_predict(est, dev[cols], dev["high"], test[cols])
+    return test.assign(pred=pred, score=score)[["week", "city", "pm25", "threshold", "high", "pred", "score"]]
+
+
+def leaderboard_chart(d, majority):
+    d = d.sort_values("test_accuracy")
+    fig = go.Figure(go.Bar(
+        x=d["test_accuracy"], y=d["model"], orientation="h", marker_color=[FAMILY_COLOR[f] for f in d["family"]],
+        customdata=np.stack([d["family"], d["test_balanced_accuracy"], d["test_auc"], d["cv_balanced_accuracy"]], axis=1),
+        hovertemplate="<b>%{y}</b><br>%{customdata[0]}<br>2024 accuracy %{x:.1%}<br>balanced accuracy %{customdata[1]:.1%}"
+                      "<br>AUC %{customdata[2]:.2f}<br>2022–23 CV balanced accuracy %{customdata[3]:.1%}<extra></extra>"))
+    fig.add_vline(x=majority, line_dash="dash", line_color=INK2, line_width=1, annotation_text="majority class", annotation_position="top")
+    fig.add_vline(x=0.70, line_dash="dot", line_color="#c0392b", line_width=1.5, annotation_text="70%", annotation_position="top")
+    fig.update_xaxes(title_text="accuracy on held-out 2024 weeks", tickformat=".0%", range=[0.3, 0.86])
+    fig.update_yaxes(tickfont=dict(size=11))
+    return style(fig, max(320, 19 * len(d) + 80))
+
+
+def feature_set_chart(board, sel, majority):
+    fig = go.Figure()
+    for fs in FS_LABEL:
+        v = board[board["feature_set"] == fs]
+        fig.add_trace(go.Box(y=v["test_accuracy"], name=FS_LABEL[fs], boxpoints="all", jitter=0.45, pointpos=0,
+                             marker=dict(size=5, color=AXIS), line=dict(color="#2a78d6"), fillcolor="rgba(42,120,214,0.08)",
+                             text=v["model"], hovertemplate="%{text}<br>%{y:.1%}<extra></extra>"))
+        fig.add_trace(go.Scatter(x=[FS_LABEL[fs]], y=[sel.loc[fs, "test_accuracy"]], mode="markers",
+                                 marker=dict(size=13, color="#eb6834", symbol="diamond", line=dict(color="white", width=1)),
+                                 text=[sel.loc[fs, "model"]], hovertemplate="selected on 2022–23: %{text}<br>%{y:.1%}<extra></extra>"))
+    fig.add_hline(y=majority, line_dash="dash", line_color=INK2, line_width=1)
+    fig.add_hline(y=0.70, line_dash="dot", line_color="#c0392b", line_width=1.5)
+    fig.update_yaxes(title_text="accuracy on held-out 2024 weeks", tickformat=".0%")
+    return style(fig, 400)
+
+
+def family_chart(board, fs):
+    d = board[board["feature_set"] == fs].groupby("family")["test_accuracy"].agg(["median", "max"]).reindex(list(FAMILY_COLOR))
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=d.index, y=d["median"], name="median", marker_color=[FAMILY_COLOR[f] for f in d.index],
+                         hovertemplate="%{x}<br>median %{y:.1%}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=d.index, y=d["max"], mode="markers", name="best", marker=dict(size=11, color=INK, symbol="line-ew-open", line=dict(width=3)),
+                             hovertemplate="%{x}<br>best %{y:.1%}<extra></extra>"))
+    fig.update_yaxes(title_text="2024 accuracy", tickformat=".0%", range=[0.5, 0.85])
+    return style(fig, 320)
+
+
+def live_chart(d, city):
+    d = d.sort_values("week")
+    ok = d["pred"] == d["high"]
+    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.08, row_heights=[0.62, 0.38])
+    fig.add_trace(go.Scatter(x=d["week"], y=d["pm25"], mode="lines", line=dict(color=AXIS, width=2), hoverinfo="skip", showlegend=False), 1, 1)
+    for mask, color, name in [(ok, COLOR[city], "correct"), (~ok, "#d6453d", "wrong")]:
+        fig.add_trace(go.Scatter(x=d.loc[mask, "week"], y=d.loc[mask, "pm25"], mode="markers", name=name,
+                                 marker=dict(color=color, size=9, symbol="circle" if name == "correct" else "x", line=dict(color="white", width=1)),
+                                 customdata=np.stack([d.loc[mask, "high"].map({1.0: "high", 0.0: "low"}), np.where(d.loc[mask, "pred"] == 1, "high", "low")], axis=1),
+                                 hovertemplate="%{x|%d %b %Y}<br>PM2.5 %{y:.1f}<br>actual %{customdata[0]}, predicted %{customdata[1]}<extra></extra>"), 1, 1)
+    fig.add_hline(y=d["threshold"].iloc[0], line_dash="dash", line_color=INK2, line_width=1, row=1, col=1,
+                  annotation_text="city median, 2022–23", annotation_position="top left")
+    fig.add_trace(go.Bar(x=d["week"], y=d["score"], marker_color=np.where(d["pred"] == 1, COLOR[city], AXIS), name="model score",
+                         hovertemplate="%{x|%d %b %Y}<br>score %{y:.2f}<extra></extra>"), 2, 1)
+    fig.update_yaxes(title_text="PM2.5 (µg/m³)", row=1, col=1)
+    fig.update_yaxes(title_text="model score", row=2, col=1)
+    return style(fig, 460, legend=True)
+
+
+def page_models(city):
+    board, sel, city_acc, summary = mc_tables()
+    majority = float(summary["majority_accuracy"])
+    hero("Comparative study · 64 classifiers · 320 runs", "Can search tell a polluted week from a clean one?",
+         "Every model learns from 2022–2023 and is tested once on the 2024 weeks it never saw. A week counts as polluted when PM2.5 is above "
+         "that city's 2022–23 median. The question is whether search adds anything that the calendar does not already know.")
+    sc, cal, hl = sel.loc["search+calendar"], sel.loc["calendar"], sel.loc["health"]
+    c1, c2, c3, c4 = st.columns(4, gap="small")
+    tile(c1, "Search + calendar", f"{sc['test_accuracy']:.1%}", f"{sc['model']}, 95% CI {sc['test_ci_low']:.0%}–{sc['test_ci_high']:.0%}", "#2a78d6")
+    tile(c2, "Calendar only", f"{cal['test_accuracy']:.1%}", f"{cal['model']}; gap not significant", "#8a8984")
+    tile(c3, "Health searches only", f"{hl['test_accuracy']:.1%}", "no better than a coin flip", "#d6453d")
+    tile(c4, "Majority class", f"{majority:.1%}", f"last week's PM2.5: {float(summary['persistence_accuracy']):.1%}", INK)
+    section("Leaderboard", "All 64 configurations",
+            "Bars are coloured by family. Hover for balanced accuracy, AUC and the 2022–23 cross-validation score used to pick the selected model.")
+    f1, f2 = st.columns([1, 2], gap="small")
+    fs = f1.selectbox("Feature set", list(FS_LABEL), index=3, format_func=FS_LABEL.get)
+    fams = f2.multiselect("Families", list(FAMILY_COLOR), default=list(FAMILY_COLOR))
+    d = board[(board["feature_set"] == fs) & board["family"].isin(fams)]
+    show(leaderboard_chart(d, majority))
+    with st.expander("Full table"):
+        t = d[["family", "model", "cv_balanced_accuracy", "test_accuracy", "test_balanced_accuracy", "test_f1", "test_auc", "seconds"]]
+        st.dataframe(t.sort_values("test_accuracy", ascending=False).rename(columns={
+            "cv_balanced_accuracy": "2022–23 CV balanced acc.", "test_accuracy": "2024 accuracy", "test_balanced_accuracy": "2024 balanced acc.",
+            "test_f1": "2024 F1", "test_auc": "2024 AUC", "seconds": "fit time (s)"}).round(3), width="stretch", hide_index=True)
+    section("Feature sets", "The calendar does most of the work",
+            "Each box holds all 64 configurations. Diamond: the model chosen on 2022–23 data. Dotted line: 70%. Dashed line: majority class.")
+    show(feature_set_chart(board, sel, majority))
+    a, b = st.columns(2, gap="small")
+    with a:
+        section("Families", "Bagging, boosting, voting or stacking?", "Bars: median 2024 accuracy. Tick: best configuration.")
+        show(family_chart(board, fs))
+    with b:
+        section("Cities", "Selected models by city, 2024", "Search helps in Bangkok and Kraków and slightly hurts Lahore and Melbourne.")
+        ca = city_acc.reset_index().rename(columns={"index": "city"})
+        fig = go.Figure([go.Bar(x=ca["city"], y=ca["calendar_only"], name="calendar only", marker_color=AXIS),
+                         go.Bar(x=ca["city"], y=ca["accuracy"], name="search + calendar", marker_color="#2a78d6")])
+        fig.update_yaxes(tickformat=".0%", range=[0, 1])
+        show(style(fig, 320, legend=True))
+    section("Try a model", f"See a model in action in {NAME[city]}",
+            "Pick any configuration. It is trained on 2022–23 and asked to classify every 2024 week. Change the city in the sidebar.")
+    m1, m2 = st.columns([1, 2], gap="small")
+    live_fs = m1.selectbox("Feature set ", list(FS_LABEL), index=3, format_func=FS_LABEL.get, key="live_fs")
+    names = board[board["feature_set"] == live_fs].sort_values("test_accuracy", ascending=False)["model"].tolist()
+    model = m2.selectbox("Model", names, index=names.index(sel.loc[live_fs, "model"]))
+    with st.spinner(f"Training {model}…"):
+        res = mc_fit(live_fs, model)
+    rc = res[res["city"] == city]
+    acc_city, acc_all = (rc["pred"] == rc["high"]).mean(), (res["pred"] == res["high"]).mean()
+    tp = int(((rc["pred"] == 1) & (rc["high"] == 1)).sum())
+    k1, k2, k3, k4 = st.columns(4, gap="small")
+    tile(k1, f"Accuracy, {NAME[city]}", f"{acc_city:.1%}", f"{len(rc)} weeks in 2024", COLOR[city])
+    tile(k2, "Accuracy, all cities", f"{acc_all:.1%}", f"{len(res)} city-weeks", INK)
+    tile(k3, "Polluted weeks caught", f"{tp} of {int(rc['high'].sum())}", "true positives", "#12a06a")
+    tile(k4, "False alarms", f"{int(((rc['pred'] == 1) & (rc['high'] == 0)).sum())}", "clean weeks flagged as polluted", "#d6453d")
+    show(live_chart(rc, city))
+    st.markdown("<div class='finding'>A model that knows only the date classifies about 79% of 2024 weeks correctly. Adding search lifts that to about 81%, "
+                "a gap that is not statistically significant, and health searches on their own score at chance. Search carries pollution information, "
+                "but most of it is the season.</div>", unsafe_allow_html=True)
+
+
 PAGES = {"Overview": lambda c: page_overview(), "Explore a city": page_explore,
-         "Awareness Gap": page_gap, "Health signal": page_health, "Data and methods": page_data}
+         "Awareness Gap": page_gap, "Health signal": page_health, "Model comparison": page_models, "Data and methods": page_data}
 
 with st.sidebar:
     st.markdown("<div class='brand'>Air quality vs search</div><div class='brand-sub'>PM2.5 and public attention</div>", unsafe_allow_html=True)

@@ -63,6 +63,7 @@ the interpretation is in `outputs/report/findings.md`.
 | `05_awareness_gap.ipynb` | When attention responds, how fast, lag asymmetry, whether it wears out, silent weeks |
 | `06_causal_ml_verdict.ipynb` | Granger tests, forecast skill for attention and health, scorecard and verdict tables |
 | `07_health_signal.ipynb` | Health searches against PM2.5: the seasonality confound, role contrast, cascade, year by year |
+| `08_model_comparison.ipynb` | 64 classifiers (single, bagging, boosting, voting, stacking) on five feature sets, trained on 2022-2023 and tested on 2024, with saved models in `outputs/model_comparison/trained_models` |
 
 The notebooks add `../src` to the path themselves, so they need no `PYTHONPATH`.
 

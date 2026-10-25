@@ -1,0 +1,5 @@
+,a_only_correct,b_only_correct,p
+"search+calendar (Extra trees (500, depth 6)) vs calendar only (CatBoost (depth 4))",16.0,13.0,0.711071103811264
+"search+calendar (Extra trees (500, depth 6)) vs health only (k-nearest neighbours (k=5))",65.0,14.0,5.194941262584353e-09
+"search+calendar (Extra trees (500, depth 6)) vs majority class",66.0,14.0,3.1365426901467503e-09
+"search+calendar (Extra trees (500, depth 6)) vs persistence",26.0,12.0,0.03355243967962451
